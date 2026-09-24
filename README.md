@@ -1,80 +1,252 @@
-# RPL Toolkit
+# RPLKit Developer Tools
 
-RPL Toolkit is a collection of small utilities and tools made for students, developers, and anyone who needs them.
+**Upgraded by Ndyndy — 12 RPL-1**
 
-The project started as a simple learning project by students of Rekayasa Perangkat Lunak (RPL). It is designed to grow over time as new tools and ideas are added.
+> A modern, modular developer toolkit rebuilt from Python into a native C++ and Rust-based core.
 
-## Features
+RPLKit Developer Tools is an upgraded version of the original **RPLKit**, redesigned to provide a faster, more extensible, and modular foundation for developer utilities.
 
-RPL Toolkit currently contains no tools yet.
+The project moves its core architecture away from the original Python-based implementation toward **C++ and Rust**, while introducing a **System Module** that allows individual tools to remain flexible and easy to develop.
 
-The first version will focus on building the basic structure of the application before adding individual utilities.
+---
 
-Planned tools include:
+## Overview
 
-Calculator
+RPLKit was originally built as a collection of developer-oriented utilities using Python.
 
-Number and base converter
+This upgraded version focuses on three major improvements:
 
-Text encoder and decoder
+* Native **C++ and Rust core**
+* Modular **System Module architecture**
+* Support for writing tools using **Python or TypeScript**
 
-Password generator
+The goal is to separate the application's core system from individual tools, allowing new functionality to be added without modifying the entire application.
 
-Hash generator
+```text
+                         RPLKit
+                            │
+                    ┌───────┴───────┐
+                    │   Core System │
+                    │  C++ / Rust   │
+                    └───────┬───────┘
+                            │
+                     System Module
+                            │
+              ┌─────────────┼─────────────┐
+              │             │             │
+           Python       TypeScript      Native
+            Tools          Tools         Modules
+```
 
-JSON formatter
+---
 
-UUID generator
+## Architecture
 
-Timestamp converter
+### Core
 
-QR code generator
+The core runtime is built primarily with:
 
-File utilities
+* **C++** — system-level functionality and native runtime
+* **Rust** — safe, performant components and supporting infrastructure
 
-More tools will be added as the project develops.
+The native core is responsible for managing the application lifecycle, modules, communication, and system-level operations.
+
+---
+
+## System Module
+
+The **System Module** is the main architectural improvement introduced in the upgraded RPLKit.
+
+Instead of implementing every tool directly inside the core application, tools are treated as independent modules.
+
+```text
+RPLKit
+│
+├── Core
+│   ├── Runtime
+│   ├── Module Manager
+│   └── System Services
+│
+├── System Module
+│   ├── Python Runtime
+│   ├── TypeScript Runtime
+│   └── Module Interface
+│
+└── Tools
+    ├── Python Tools
+    ├── TypeScript Tools
+    └── Native Tools
+```
+
+This allows developers to create new tools without tightly coupling them to the core.
+
+---
+
+## Multi-Language Tools
+
+RPLKit is designed to support multiple languages at the tool level.
+
+### Python
+
+Python can be used when rapid development and scripting capabilities are preferred.
+
+```text
+RPLKit Core
+    │
+    └── Python Module
+            │
+            └── tool.py
+```
+
+### TypeScript
+
+TypeScript can be used for tools that benefit from the JavaScript ecosystem and type safety.
+
+```text
+RPLKit Core
+    │
+    └── TypeScript Module
+            │
+            └── tool.ts
+```
+
+This approach keeps the core native while allowing developers to choose the most appropriate language for individual tools.
+
+---
+
+## Why C++ + Rust?
+
+The upgrade does not simply replace Python for the sake of performance.
+
+The native core provides a stronger foundation for:
+
+* System-level operations
+* Process management
+* Resource control
+* Native integrations
+* Runtime management
+* Modular execution
+* Long-running developer utilities
+
+Rust is used where memory safety and reliability are important, while C++ provides mature native-system capabilities and ecosystem compatibility.
+
+---
+
+## Project Goals
+
+RPLKit aims to become a small but extensible developer platform rather than a static collection of scripts.
+
+### Current Direction
+
+* [x] Replace the original Python-based core
+* [x] Introduce C++ / Rust architecture
+* [x] Design modular system
+* [x] Introduce System Module
+* [ ] Support Python-based tools
+* [ ] Support TypeScript-based tools
+* [ ] Expand module API
+* [ ] Improve module isolation
+* [ ] Add module discovery
+* [ ] Improve runtime management
+* [ ] Expand developer utilities
+
+---
+
+## Design Philosophy
+
+RPLKit follows a simple principle:
+
+> **Keep the core stable. Keep the tools replaceable.**
+
+The core should provide the infrastructure.
+
+Modules should provide the capabilities.
+
+Tools should remain independent.
+
+```text
+Core
+ │
+ ├── provides infrastructure
+ │
+ ▼
+Modules
+ │
+ ├── provide runtime / integration
+ │
+ ▼
+Tools
+ │
+ └── provide actual functionality
+```
+
+This makes the project easier to extend as the number of developer tools grows.
+
+---
 
 ## Project Structure
 
-The project is designed to keep each tool separated into its own module.
-
-This makes it easier to add new tools without having to rewrite the entire application.
+The exact structure may evolve as development continues.
 
 ```text
-rpl-toolkit/
+rplkit/
+│
 ├── core/
+│   ├── cpp/
+│   └── rust/
+│
+├── modules/
+│   ├── python/
+│   ├── typescript/
+│   └── native/
+│
 ├── tools/
-├── tests/
-├── main.py
-├── requirements.txt
-├── README.md
-└── LICENSE
+│   ├── python/
+│   └── typescript/
+│
+├── config/
+│
+└── README.md
 ```
 
-The structure may change as development continues.
+---
 
-## Development
+## Legacy → Upgraded
 
-This project is currently under development.
+| Area               | Original RPLKit  | RPLKit Upgraded     |
+| ------------------ | ---------------- | ------------------- |
+| Core               | Python           | C++ + Rust          |
+| Architecture       | Monolithic tools | Modular             |
+| Tool Runtime       | Python           | Python + TypeScript |
+| System Module      | —                | ✓                   |
+| Extensibility      | Limited          | Module-based        |
+| Native Integration | Limited          | Native core         |
+| Tool Development   | Python           | Python / TypeScript |
 
-The main goal is to build a useful toolkit while learning software development practices such as modular programming, Git, testing, documentation, and collaboration.
+---
 
-## Contributing
+## Credits
 
-Contributions are welcome.
+**RPLKit Developer Tools**
 
-If you want to add a new tool or improve an existing one, feel free to open an issue or submit a pull request.
+Originally developed as an RPL developer toolkit.
 
-Please keep new tools simple, focused, and reasonably documented.
+### Upgrade
+
+**Ndyndy — 12 RPL-1**
+
+The upgraded architecture introduces the C++ / Rust core and modular System Module design while preserving the project's original purpose as a collection of practical developer tools.
+
+---
+
+## Status
+
+> **In Development**
+
+RPLKit is an evolving project. APIs, module interfaces, project structure, and supported runtimes may change as the architecture develops.
+
+---
 
 ## License
 
-This project is licensed under the MIT License. See the LICENSE file for more information.
-
-## Authors
-
-Developed by 10 RPL students as an ongoing learning project. 
-
-More information about the contributors can be found in the repository history..
-
-#SMKN1SUDIMOROHEBAT
+License information will be added as the project is finalized.

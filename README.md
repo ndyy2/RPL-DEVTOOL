@@ -2,6 +2,10 @@
 
 **Upgraded by Ndyndy — 12 RPL-1**
 
+<p align="center">
+  <img src="assets/architecture.svg" alt="RPLKit animated architecture: native C++/Rust core, System Module, and replaceable tools" width="860" />
+</p>
+
 > A modern, modular developer toolkit rebuilt from Python into a native C++ and Rust-based core.
 
 RPLKit Developer Tools is an upgraded version of the original **RPLKit**, redesigned to provide a faster, more extensible, and modular foundation for developer utilities.

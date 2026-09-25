@@ -1,0 +1,13 @@
+{
+  "app": "rplkit",
+  "version": "0.2.0",
+  "cores": {
+    "cpp": "build/cpp/rplkit",
+    "rust": "core/rust/target/release/rplkit",
+    "python": "main.py"
+  },
+  "runtimes": {
+    "python": "python3",
+    "typescript": "node"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "name": "calculator",
+  "runtime": "python",
+  "description": "Safe arithmetic evaluator (Python tool)"
+}

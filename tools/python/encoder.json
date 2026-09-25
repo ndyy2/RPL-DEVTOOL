@@ -1,0 +1,5 @@
+{
+  "name": "encoder",
+  "runtime": "python",
+  "description": "Base64 / hex / URL / ROT13 encoder-decoder (Python tool)"
+}

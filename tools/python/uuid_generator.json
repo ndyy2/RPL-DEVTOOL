@@ -1,0 +1,5 @@
+{
+  "name": "uuid_generator",
+  "runtime": "python",
+  "description": "UUID v1/v4 generator (Python tool)"
+}

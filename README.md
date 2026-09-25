@@ -142,11 +142,11 @@ RPLKit aims to become a small but extensible developer platform rather than a st
 * [x] Introduce C++ / Rust architecture
 * [x] Design modular system
 * [x] Introduce System Module
-* [ ] Support Python-based tools
-* [ ] Support TypeScript-based tools
-* [ ] Expand module API
+* [x] Support Python-based tools (`tools/python/`, 8 tools, stdlib-only)
+* [x] Support TypeScript-based tools (`tools/typescript/hello.ts` via node runtime)
+* [x] Expand module API (`modules/` ToolMeta interface + manifests)
 * [ ] Improve module isolation
-* [ ] Add module discovery
+* [x] Add module discovery (C++/Rust/Python `--list` from `tools/*` + manifests)
 * [ ] Improve runtime management
 * [ ] Expand developer utilities
 

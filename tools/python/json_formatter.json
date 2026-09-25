@@ -1,0 +1,5 @@
+{
+  "name": "json_formatter",
+  "runtime": "python",
+  "description": "JSON validator & pretty-printer (Python tool)"
+}

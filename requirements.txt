@@ -1,1 +1,9 @@
-# Runtime dependencies will be added as tools require them.
+# RPLKit runtime dependencies.
+#
+# Core + 8 Python tools = stdlib-only (no install needed):
+#   python3 main.py
+#   cmake -S core/cpp -B build/cpp && cmake --build build/cpp
+#   cargo build --manifest-path core/rust/Cargo.toml   (needs Rust toolchain)
+#
+# Optional — only for real QR PNG output (else ASCII-box fallback):
+# qrcode[pil]

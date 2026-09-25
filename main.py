@@ -1,7 +1,11 @@
-"""RPL Toolkit - main entry point."""
+"""RPL Toolkit - main entry point (thin: lifecycle milik core.runtime)."""
 
-from core.menu import run_menu
+from core.runtime import Runtime
+
+
+def main() -> int:
+    return Runtime().run()
 
 
 if __name__ == "__main__":
-    run_menu()
+    raise SystemExit(main())

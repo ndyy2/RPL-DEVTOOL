@@ -1,0 +1,5 @@
+{
+  "name": "file_utils",
+  "runtime": "python",
+  "description": "File size / SHA-256 / directory listing (Python tool)"
+}

@@ -1,0 +1,5 @@
+{
+  "name": "qr_generator",
+  "runtime": "python",
+  "description": "QR PNG (needs qrcode lib) with ASCII-box fallback (Python tool)"
+}

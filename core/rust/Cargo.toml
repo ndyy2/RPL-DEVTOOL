@@ -1,0 +1,14 @@
+[package]
+name = "rplkit-core"
+version = "0.2.0"
+edition = "2021"
+description = "RPLKit safe, performant core components in Rust (memory-safe counterpart to core/cpp)"
+license = "MIT"
+
+[lib]
+name = "rplkit_core"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rplkit"
+path = "src/main.rs"

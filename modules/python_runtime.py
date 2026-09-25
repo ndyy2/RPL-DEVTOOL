@@ -11,8 +11,9 @@ import json
 from pathlib import Path
 
 from . import ToolMeta
+from . import manifests
 
-PACKAGE_DIRS = ("tools/python", "tools")  # layout baru dulu, legacy belakangan
+PACKAGE_DIRS = ("tools/python", "tools")  # legacy, dipakai bila tanpa manifest
 
 
 def _describe(script: Path, fallback: str) -> str:
@@ -36,8 +37,17 @@ def _describe(script: Path, fallback: str) -> str:
 
 
 def discover(repo_root: str | Path) -> list[ToolMeta]:
-    """Temukan tool Python tanpa meng-import apa pun."""
+    """Temukan tool Python: manifest dulu (`tools/*/tool.json`), lalu legacy."""
     root = Path(repo_root)
+    found = [t for t in manifests.discover(root) if t.runtime == "python"]
+    if found:
+        return found
+    return _discover_legacy(root)
+
+
+def _discover_legacy(repo_root: Path) -> list[ToolMeta]:
+    """Layout lama tanpa manifest (dihapus Fase 7)."""
+    root = repo_root
     found: list[ToolMeta] = []
     seen: set[str] = set()
     for pkg in PACKAGE_DIRS:

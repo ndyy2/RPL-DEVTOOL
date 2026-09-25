@@ -1,0 +1,13 @@
+{
+  "name": "project-init",
+  "version": "2.1.0",
+  "description": "Scaffold minimal Python/Node project",
+  "module": "system-tools",
+  "exec": [
+    "py-embed",
+    "py-sys"
+  ],
+  "entries": {
+    "python": "impl.py"
+  }
+}

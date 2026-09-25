@@ -1,5 +1,0 @@
-{
-  "name": "timestamp",
-  "runtime": "python",
-  "description": "Unix epoch <-> ISO-8601 converter (Python tool)"
-}

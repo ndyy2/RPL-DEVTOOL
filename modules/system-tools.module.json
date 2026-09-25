@@ -1,0 +1,8 @@
+{
+  "name": "system-tools",
+  "version": "2.1.0",
+  "author": "RPLKit",
+  "description": "Operating system utilities",
+  "runtime": "rust",
+  "enabled_by_default": true
+}

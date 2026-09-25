@@ -1,0 +1,8 @@
+{
+  "name": "school-tools",
+  "version": "0.8.1",
+  "author": "RPLKit",
+  "description": "School utilities (incubating, no tools yet)",
+  "runtime": "python",
+  "enabled_by_default": false
+}

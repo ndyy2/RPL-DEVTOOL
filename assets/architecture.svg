@@ -1,195 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="900" height="620" viewBox="0 0 900 620" font-family="Inter, Segoe UI, SF Pro Display, Roboto, Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" font-family="Inter, Segoe UI, SF Pro Display, Roboto, Helvetica, Arial, sans-serif">
   <defs>
-    <radialGradient id="bgGlow" cx="0.5" cy="0.32" r="0.9">
-      <stop offset="0" stop-color="#16233d"/>
-      <stop offset="0.55" stop-color="#0b1120"/>
-      <stop offset="1" stop-color="#070b14"/>
+    <radialGradient id="bgGlow" cx="0.5" cy="0.24" r="0.95">
+      <stop offset="0" stop-color="#131c33"/>
+      <stop offset="0.55" stop-color="#0b0f1a"/>
+      <stop offset="1" stop-color="#05070d"/>
     </radialGradient>
-    <linearGradient id="edgeGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#22d3ee"/>
-      <stop offset="0.55" stop-color="#818cf8"/>
-      <stop offset="1" stop-color="#c084fc"/>
-    </linearGradient>
-    <linearGradient id="cppGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#38bdf8"/>
-      <stop offset="1" stop-color="#2563eb"/>
-    </linearGradient>
-    <linearGradient id="rustGrad" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#fb923c"/>
-      <stop offset="1" stop-color="#dc2626"/>
-    </linearGradient>
+    <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0.6" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </radialGradient>
     <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#f8fafc"/>
-      <stop offset="0.5" stop-color="#67e8f9"/>
+      <stop offset="0.5" stop-color="#b9b9f5"/>
       <stop offset="1" stop-color="#f8fafc"/>
+      <animateTransform attributeName="gradientTransform" type="translate" from="-1.2 0" to="1.2 0" dur="6s" repeatCount="indefinite"/>
     </linearGradient>
     <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
-      <circle cx="1.5" cy="1.5" r="1.2" fill="#1e293b"/>
+      <circle cx="1.5" cy="1.5" r="1.2" fill="#202b45"/>
     </pattern>
-    <filter id="blur8" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="9"/>
-    </filter>
-    <filter id="blur14" x="-60%" y="-60%" width="220%" height="220%">
-      <feGaussianBlur stdDeviation="16"/>
-    </filter>
+    <!-- icon set: 24x24, stroke=currentColor -->
+    <symbol id="h-chip" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6.5" y="6.5" width="11" height="11" rx="1.5"/><path d="M9,2.5 v4 M15,2.5 v4 M9,17.5 v4 M15,17.5 v4 M2.5,9 h4 M2.5,15 h4 M17.5,9 h4 M17.5,15 h4"/>
+    </symbol>
+    <symbol id="h-box" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12,2.5 l8,4.6 v9.2 l-8,4.6 -8,-4.6 v-9.2 z"/><path d="M4.5,7.3 l7.5,4.3 7.5,-4.3 M12,11.6 v8.7"/>
+    </symbol>
+    <symbol id="h-play" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M10,8.5 l6,3.5 -6,3.5 z" fill="currentColor" stroke="none"/>
+    </symbol>
+    <symbol id="h-layers" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12,3.5 l8.5,4.7 -8.5,4.7 -8.5,-4.7 z"/><path d="M4.5,12.5 l7.5,4.1 7.5,-4.1 M4.5,16.5 l7.5,4.1 7.5,-4.1"/>
+    </symbol>
+    <symbol id="h-check" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/><path d="M8,12.5 l2.8,2.8 5.2,-6"/>
+    </symbol>
   </defs>
 
   <!-- backdrop -->
-  <rect x="4" y="4" width="892" height="612" rx="22" fill="url(#bgGlow)" stroke="#1e293b" stroke-width="1.5"/>
-  <rect x="4" y="4" width="892" height="612" rx="22" fill="url(#dots)" opacity="0.55"/>
-
-  <!-- ambient rotating halo -->
-  <ellipse cx="450" cy="300" rx="335" ry="205" fill="none" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3 14" opacity="0.22">
-    <animateTransform attributeName="transform" type="rotate" from="0 450 300" to="360 450 300" dur="40s" repeatCount="indefinite"/>
-  </ellipse>
-
-  <!-- title -->
-  <text x="450" y="54" text-anchor="middle" fill="url(#sheen)" font-size="27" font-weight="800" letter-spacing="0.5" opacity="0">RPLKit Developer Tools
-    <animate attributeName="opacity" from="0" to="1" dur="0.9s" begin="0s" fill="freeze"/>
-  </text>
-  <text x="450" y="76" text-anchor="middle" fill="#64748b" font-size="11" letter-spacing="4" opacity="0">NATIVE CORE &#8226; SYSTEM MODULE &#8226; REPLACEABLE TOOLS
-    <animate attributeName="opacity" from="0" to="1" dur="0.9s" begin="0.3s" fill="freeze"/>
-  </text>
-
-  <!-- ============ CORE ============ -->
-  <g opacity="0">
-    <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.45s" fill="freeze"/>
-    <rect x="250" y="96" width="400" height="106" rx="18" fill="none" stroke="url(#edgeGrad)" stroke-width="3" opacity="0.35" filter="url(#blur14)">
-      <animate attributeName="opacity" values="0.35;0.7;0.35" dur="3s" repeatCount="indefinite"/>
-    </rect>
-    <rect x="250" y="96" width="400" height="106" rx="18" fill="#0b1226" fill-opacity="0.88" stroke="url(#edgeGrad)" stroke-width="1.5"/>
-    <circle cx="368" cy="121" r="4" fill="#34d399">
-      <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" repeatCount="indefinite"/>
-    </circle>
-    <text x="450" y="126" text-anchor="middle" fill="#f1f5f9" font-size="15" font-weight="700" letter-spacing="2">CORE SYSTEM</text>
-    <text x="450" y="144" text-anchor="middle" fill="#7d8aa0" font-size="11">runtime &#183; module manager &#183; system services</text>
-    <g font-size="12.5" font-weight="700" text-anchor="middle">
-      <rect x="318" y="154" width="122" height="30" rx="15" fill="url(#cppGrad)"/>
-      <text x="379" y="174" fill="#f0f9ff">C++</text>
-      <rect x="460" y="154" width="122" height="30" rx="15" fill="url(#rustGrad)"/>
-      <text x="521" y="174" fill="#fff7ed">Rust</text>
-    </g>
-  </g>
-
-  <!-- flow core -> system -->
-  <line x1="450" y1="204" x2="450" y2="234" stroke="#22d3ee" stroke-width="2.5" stroke-dasharray="6 7" opacity="0.85">
-    <animate attributeName="stroke-dashoffset" from="13" to="0" dur="0.8s" repeatCount="indefinite"/>
-  </line>
-  <circle cx="450" cy="208" r="3.5" fill="#67e8f9" filter="url(#blur8)">
-    <animate attributeName="cy" values="208;230;208" dur="1.8s" repeatCount="indefinite"/>
-    <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/>
+  <rect x="4" y="4" width="892" height="512" rx="22" fill="url(#bgGlow)" stroke="#26334d" stroke-width="1.5"/>
+  <rect x="4" y="4" width="892" height="512" rx="22" fill="url(#dots)" opacity="0.45"/>
+  <circle cx="450" cy="240" r="180" fill="#5B5BD6" opacity="0.07">
+    <animate attributeName="opacity" values="0.07;0.11;0.07" dur="12s" repeatCount="indefinite"/>
   </circle>
-  <polygon points="450,242 443,231 457,231" fill="#22d3ee"/>
-  <text x="466" y="226" fill="#67e8f9" font-size="11" font-style="italic">discovers &#183; dispatches</text>
+  <rect x="4" y="4" width="892" height="512" rx="22" fill="url(#vignette)"/>
 
-  <!-- ============ SYSTEM MODULE ============ -->
-  <g opacity="0">
-    <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.95s" fill="freeze"/>
-    <rect x="140" y="246" width="620" height="118" rx="18" fill="#0b1424" fill-opacity="0.9" stroke="#334155" stroke-width="1.5"/>
-    <rect x="140" y="246" width="620" height="118" rx="18" fill="none" stroke="url(#edgeGrad)" stroke-width="1" opacity="0.45"/>
-    <circle cx="347" cy="269" r="3.5" fill="#34d399">
-      <animate attributeName="opacity" values="1;0.3;1" dur="1.8s" begin="0.4s" repeatCount="indefinite"/>
-    </circle>
-    <text x="450" y="274" text-anchor="middle" fill="#f1f5f9" font-size="14" font-weight="700" letter-spacing="2">SYSTEM MODULE</text>
-    <g font-size="12" font-weight="600" text-anchor="middle">
-      <g opacity="0">
-        <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.15s" fill="freeze"/>
-        <rect x="160" y="286" width="186" height="60" rx="12" fill="#0c1a3a" stroke="#38bdf8" stroke-width="1.2"/>
-        <text x="253" y="309" fill="#bae6fd">Python Runtime</text>
-        <text x="253" y="327" fill="#64748b" font-size="10.5" font-weight="400">tools/python/ &#215;8</text>
-      </g>
-      <g opacity="0">
-        <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.3s" fill="freeze"/>
-        <rect x="357" y="286" width="186" height="60" rx="12" fill="#0a1f1a" stroke="#34d399" stroke-width="1.2"/>
-        <text x="450" y="309" fill="#a7f3d0">TypeScript Runtime</text>
-        <text x="450" y="327" fill="#64748b" font-size="10.5" font-weight="400">node &#183; hello.ts</text>
-      </g>
-      <g opacity="0">
-        <animate attributeName="opacity" from="0" to="1" dur="0.5s" begin="1.45s" fill="freeze"/>
-        <rect x="554" y="286" width="186" height="60" rx="12" fill="#221a09" stroke="#fbbf24" stroke-width="1.2"/>
-        <text x="647" y="309" fill="#fde68a">Module Interface</text>
-        <text x="647" y="327" fill="#64748b" font-size="10.5" font-weight="400">ToolMeta + manifest</text>
-      </g>
-    </g>
-  </g>
-
-  <!-- flows system -> tools -->
-  <g stroke-width="2.5" stroke-dasharray="6 7" opacity="0.85">
-    <line x1="253" y1="366" x2="253" y2="394" stroke="#38bdf8">
-      <animate attributeName="stroke-dashoffset" from="13" to="0" dur="0.8s" repeatCount="indefinite"/>
-    </line>
-    <line x1="450" y1="366" x2="450" y2="394" stroke="#34d399">
-      <animate attributeName="stroke-dashoffset" from="13" to="0" dur="0.8s" begin="0.2s" repeatCount="indefinite"/>
-    </line>
-    <line x1="647" y1="366" x2="647" y2="394" stroke="#fbbf24">
-      <animate attributeName="stroke-dashoffset" from="13" to="0" dur="0.8s" begin="0.4s" repeatCount="indefinite"/>
-    </line>
-  </g>
-  <g>
-    <circle cx="253" cy="370" r="3.2" fill="#7dd3fc" filter="url(#blur8)">
-      <animate attributeName="cy" values="370;390;370" dur="1.8s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="450" cy="370" r="3.2" fill="#6ee7b7" filter="url(#blur8)">
-      <animate attributeName="cy" values="370;390;370" dur="1.8s" begin="0.3s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0;1;0" dur="1.8s" begin="0.3s" repeatCount="indefinite"/>
-    </circle>
-    <circle cx="647" cy="370" r="3.2" fill="#fcd34d" filter="url(#blur8)">
-      <animate attributeName="cy" values="370;390;370" dur="1.8s" begin="0.6s" repeatCount="indefinite"/>
-      <animate attributeName="opacity" values="0;1;0" dur="1.8s" begin="0.6s" repeatCount="indefinite"/>
-    </circle>
-  </g>
-  <g fill="#7d8aa0">
-    <polygon points="253,402 246,391 260,391"/>
-    <polygon points="450,402 443,391 457,391"/>
-    <polygon points="647,402 640,391 654,391"/>
-  </g>
-
-  <!-- ============ TOOLS ============ -->
-  <g font-size="12" text-anchor="middle">
-    <g opacity="0">
-      <animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.65s" fill="freeze"/>
-      <rect x="120" y="406" width="266" height="112" rx="14" fill="#0b1428" fill-opacity="0.92" stroke="#38bdf8" stroke-width="1.3"/>
-      <text x="253" y="430" fill="#f1f5f9" font-size="14" font-weight="700">Python Tools</text>
-      <text x="253" y="450" fill="#7dd3fc" font-size="11">calculator &#183; converter &#183; encoder</text>
-      <text x="253" y="466" fill="#7dd3fc" font-size="11">json &#183; uuid &#183; timestamp &#183; qr &#183; file</text>
-      <text x="253" y="488" fill="#f1f5f9" font-size="11.5" font-weight="700">&#215;8 tools &#183; stdlib-only
-        <animate attributeName="opacity" values="1;0.4;1" dur="2.2s" repeatCount="indefinite"/>
-      </text>
-      <text x="253" y="505" fill="#475569" font-size="10">13 tests OK</text>
-    </g>
-    <g opacity="0">
-      <animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="1.85s" fill="freeze"/>
-      <rect x="398" y="406" width="160" height="112" rx="14" fill="#0a1a14" fill-opacity="0.92" stroke="#34d399" stroke-width="1.3"/>
-      <text x="478" y="430" fill="#f1f5f9" font-size="14" font-weight="700">TS Tools</text>
-      <text x="478" y="452" fill="#6ee7b7" font-size="11">hello.ts</text>
-      <text x="478" y="468" fill="#6ee7b7" font-size="11">via node</text>
-      <text x="478" y="492" fill="#475569" font-size="10">+ manifest</text>
-    </g>
-    <g opacity="0">
-      <animate attributeName="opacity" from="0" to="1" dur="0.6s" begin="2.05s" fill="freeze"/>
-      <rect x="570" y="406" width="210" height="112" rx="14" fill="#1d1607" fill-opacity="0.92" stroke="#fbbf24" stroke-width="1.3"/>
-      <text x="675" y="430" fill="#f1f5f9" font-size="14" font-weight="700">Native Builtins</text>
-      <text x="675" y="450" fill="#fcd34d" font-size="11">calc &#183; b64 &#183; hex &#183; uuid</text>
-      <text x="675" y="466" fill="#fcd34d" font-size="11">timestamp &#183; file-info</text>
-      <text x="675" y="488" fill="#f1f5f9" font-size="11.5" font-weight="700">C++ &#215; Rust
-        <animate attributeName="opacity" values="1;0.4;1" dur="2.2s" begin="0.6s" repeatCount="indefinite"/>
-      </text>
-      <text x="675" y="505" fill="#475569" font-size="10">5 Rust tests OK</text>
-    </g>
-  </g>
-
-  <!-- footer -->
-  <text x="450" y="548" text-anchor="middle" fill="#94a3b8" font-size="13" font-style="italic" opacity="0">&#8220;Keep the core stable. Keep the tools replaceable.&#8221;
-    <animate attributeName="opacity" from="0" to="1" dur="1s" begin="2.35s" fill="freeze"/>
+  <!-- header -->
+  <text x="450" y="34" text-anchor="middle" fill="#5b6b85" font-size="10.5" letter-spacing="5" opacity="0">RPLKIT &#183; TERMINAL WORKSPACE
+    <animate attributeName="opacity" from="0" to="1" dur="0.8s" begin="0s" fill="freeze"/>
   </text>
-  <g font-family="JetBrains Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="10.5" text-anchor="middle" opacity="0">
-    <animate attributeName="opacity" from="0" to="1" dur="1s" begin="2.6s" fill="freeze"/>
-    <rect x="140" y="560" width="160" height="26" rx="13" fill="#0f1b33" stroke="#1e3a5f"/>
-    <text x="220" y="577" fill="#7dd3fc">python3 main.py</text>
-    <rect x="310" y="560" width="220" height="26" rx="13" fill="#0f1b33" stroke="#1e3a5f"/>
-    <text x="420" y="577" fill="#7dd3fc">build/cpp/rplkit --list</text>
-    <rect x="540" y="560" width="220" height="26" rx="13" fill="#0f1b33" stroke="#1e3a5f"/>
-    <text x="650" y="577" fill="#7dd3fc">cargo test core/rust</text>
+  <text x="450" y="58" text-anchor="middle" fill="url(#sheen)" font-size="25" font-weight="800" letter-spacing="0.5" opacity="0">RPLKit Developer Tools
+    <animate attributeName="opacity" from="0" to="1" dur="0.9s" begin="0.15s" fill="freeze"/>
+  </text>
+  <text x="450" y="78" text-anchor="middle" fill="#7d8aa0" font-size="10.5" letter-spacing="4" opacity="0">MONOCHROME &#8226; ONE IRIS ACCENT &#8226; CLI + TUI
+    <animate attributeName="opacity" from="0" to="1" dur="0.9s" begin="0.35s" fill="freeze"/>
+  </text>
+
+  <!-- terminal -->
+  <g opacity="0">
+    <animate attributeName="opacity" from="0" to="1" dur="0.7s" begin="0.5s" fill="freeze"/>
+    <rect x="180" y="96" width="540" height="264" rx="14" fill="#070b13" fill-opacity="0.97" stroke="#2A3342" stroke-width="1.5"/>
+    <circle cx="202" cy="114" r="4.5" fill="#3a4356"/>
+    <circle cx="218" cy="114" r="4.5" fill="#3a4356"/>
+    <circle cx="234" cy="114" r="4.5" fill="#3a4356"/>
+    <text x="450" y="118" text-anchor="middle" fill="#5b6b85" font-size="11" letter-spacing="2">rplkit</text>
+    <circle cx="686" cy="114" r="4" fill="#5B5BD6">
+      <animate attributeName="opacity" values="1;0.2;1" dur="1.6s" repeatCount="indefinite"/>
+    </circle>
+    <text x="698" y="118" fill="#8f8ff2" font-size="10" font-weight="700" letter-spacing="1">LIVE</text>
+    <g font-family="JetBrains Mono, SFMono-Regular, Menlo, Consolas, monospace" font-size="12">
+      <text x="200" y="146" fill="#f1f5f9" font-weight="700">RPLKIT   <tspan fill="#8f8ff2">v0.3.0  ● READY</tspan></text>
+      <text x="200" y="162" fill="#6E7681" font-size="10.5">Developer Toolkit</text>
+      <use href="#h-chip" x="200" y="174" width="13" height="13" color="#6E7681"/>
+      <text x="220" y="186" fill="#6E7681" font-size="10.5">OVERVIEW ─────────────────────</text>
+      <text x="200" y="206" fill="#C9D1D9">CPU     18%  <tspan fill="#5B5BD6">███░░░░░░░░░</tspan></text>
+      <text x="200" y="224" fill="#C9D1D9">Memory  42%  <tspan fill="#5B5BD6">█████░░░░░░░</tspan></text>
+      <text x="200" y="242" fill="#C9D1D9">Disk    61%  <tspan fill="#5B5BD6">███████░░░░░</tspan></text>
+      <use href="#h-box" x="200" y="254" width="13" height="13" color="#6E7681"/>
+      <text x="220" y="266" fill="#6E7681" font-size="10.5">MODULES ──────────────────────</text>
+      <rect x="194" y="274" width="512" height="19" fill="#5B5BD6" opacity="0.28">
+        <animate attributeName="opacity" values="0.28;0.42;0.28" dur="2.4s" repeatCount="indefinite"/>
+      </rect>
+      <text x="200" y="288" fill="#ffffff">▶ ● system-tools     Rust          enabled</text>
+      <text x="200" y="306" fill="#C9D1D9">  ● git-tools        mixed         enabled</text>
+      <text x="200" y="324" fill="#6E7681">  ○ school-tools     python        disabled</text>
+      <text x="200" y="348" fill="#6E7681" font-size="10.5">[1] Tools   [2] Modules   [3] Logs   [?] Help   [q]</text>
+    </g>
   </g>
+
+  <!-- chain + stats + quote -->
+  <text x="450" y="398" text-anchor="middle" fill="#6E7681" font-size="11.5" opacity="0">native &#160;<tspan fill="#5B5BD6">›</tspan>&#160; <tspan fill="#C9D1D9">embed</tspan> &#160;<tspan fill="#5B5BD6">›</tspan>&#160; <tspan fill="#C9D1D9">fallback</tspan>
+    <animate attributeName="opacity" from="0" to="1" dur="0.8s" begin="1.1s" fill="freeze"/>
+  </text>
+  <g font-size="10.5" text-anchor="middle" opacity="0">
+    <animate attributeName="opacity" from="0" to="1" dur="0.8s" begin="1.3s" fill="freeze"/>
+    <rect x="270" y="408" width="110" height="24" rx="12" fill="#0f1626" stroke="#2A3342"/>
+    <use href="#h-box" x="280" y="413" width="14" height="14" color="#8f8ff2"/>
+    <text x="333" y="424" fill="#C9D1D9">18 tools</text>
+    <rect x="390" y="408" width="120" height="24" rx="12" fill="#0f1626" stroke="#2A3342"/>
+    <use href="#h-layers" x="400" y="413" width="14" height="14" color="#8f8ff2"/>
+    <text x="458" y="424" fill="#C9D1D9">5 modules</text>
+    <rect x="520" y="408" width="110" height="24" rx="12" fill="#0f1626" stroke="#2A3342"/>
+    <use href="#h-play" x="530" y="413" width="14" height="14" color="#8f8ff2"/>
+    <text x="583" y="424" fill="#C9D1D9">CLI+TUI</text>
+  </g>
+  <text x="450" y="462" text-anchor="middle" fill="#94a3b8" font-size="13" font-style="italic" opacity="0">&#8220;Keep the core stable. Keep the tools replaceable.&#8221;
+    <animate attributeName="opacity" from="0" to="1" dur="1s" begin="1.5s" fill="freeze"/>
+  </text>
+  <text x="450" y="486" text-anchor="middle" fill="#475569" font-size="10" letter-spacing="2" opacity="0">RATATUI · BLUE IRIS #5B5BD6
+    <animate attributeName="opacity" from="0" to="1" dur="1s" begin="1.7s" fill="freeze"/>
+  </text>
 </svg>

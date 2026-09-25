@@ -1,0 +1,12 @@
+{
+  "name": "system-info",
+  "version": "2.1.0",
+  "description": "Display system information",
+  "module": "system-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "sysinfo"
+  }
+}

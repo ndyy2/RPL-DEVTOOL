@@ -1,0 +1,12 @@
+{
+  "name": "memory",
+  "version": "2.1.0",
+  "description": "Memory information",
+  "module": "system-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "memory"
+  }
+}

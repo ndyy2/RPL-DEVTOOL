@@ -1,0 +1,17 @@
+{
+  "name": "calculator",
+  "version": "0.2.0",
+  "description": "Safe arithmetic evaluator (Python tool)",
+  "exec": [
+    "native",
+    "py-embed",
+    "py-sys"
+  ],
+  "native": {
+    "op": "calc"
+  },
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

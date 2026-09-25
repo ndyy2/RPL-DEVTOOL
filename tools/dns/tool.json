@@ -1,0 +1,12 @@
+{
+  "name": "dns",
+  "version": "2.0.0",
+  "description": "DNS utilities",
+  "module": "network-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "dns"
+  }
+}

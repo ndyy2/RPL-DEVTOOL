@@ -123,13 +123,19 @@ class RegistryTest(unittest.TestCase):
 
         tools = discover()
         names = {t.name for t in tools}
-        for expect in ("calc", "calculator", "converter", "encoder", "json_formatter",
-                       "uuid_generator", "timestamp", "qr_generator", "file_utils", "hello"):
+        for expect in ("calculator", "converter", "encoder", "json_formatter",
+                       "uuid_generator", "timestamp", "qr_generator", "file_utils", "hello",
+                       "system-info", "process", "memory", "disk", "port-check", "dns",
+                       "git-clean", "git-status", "project-init"):
             self.assertIn(expect, names, expect)
         runtimes = {t.name: t.runtime for t in tools}
-        self.assertEqual(runtimes["calc"], "native")
         self.assertEqual(runtimes["calculator"], "python")
         self.assertEqual(runtimes["hello"], "typescript")
+        modules = {t.name: t.module for t in tools}
+        self.assertEqual(modules["system-info"], "system-tools")
+        self.assertEqual(modules["dns"], "network-tools")
+        self.assertEqual(modules["git-status"], "git-tools")
+        self.assertEqual(modules["calculator"], "dev-tools")
 
     def test_menu_compat(self):
         from core.menu import run_menu
@@ -141,7 +147,7 @@ class RegistryTest(unittest.TestCase):
 
         for exe in ("build/cpp/rplkit", "core/rust/target/debug/rplkit"):
             if os.path.isfile(exe) and os.access(exe, os.X_OK):
-                out = subprocess.run([exe, "--run", "calc", "2+2"], capture_output=True,
+                out = subprocess.run([exe, "--run", "calculator", "2+2"], capture_output=True,
                                      text=True, timeout=20)
                 self.assertEqual(out.stdout.strip(), "4", exe)
                 break
@@ -153,6 +159,27 @@ class ConverterEdgeTest(unittest.TestCase):
 
         self.assertAlmostEqual(convert_temperature(25, "C", "C"), 25)
         self.assertAlmostEqual(convert_temperature(0, "C", "K"), 273.15)
+
+
+class ProjectInitTest(unittest.TestCase):
+    def test_scaffold_python(self):
+        import tempfile
+        from tools.python.project_init import scaffold
+
+        with tempfile.TemporaryDirectory() as d:
+            created = scaffold("demo", "python", d)
+            self.assertTrue(any(p.endswith("demo/main.py") for p in created))
+            self.assertTrue(os.path.isfile(os.path.join(d, "demo", "requirements.txt")))
+
+    def test_rejects_bad_input(self):
+        import tempfile
+        from tools.python.project_init import scaffold
+
+        with tempfile.TemporaryDirectory() as d:
+            with self.assertRaises(ValueError):
+                scaffold("demo", "rust", d)
+            with self.assertRaises(ValueError):
+                scaffold("", "python", d)
 
 
 if __name__ == "__main__":

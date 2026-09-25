@@ -46,6 +46,10 @@ The goal is to separate the application's core system from individual tools, all
 
 ## Architecture
 
+<p align="center">
+  <img src="assets/architecture-chart.svg" alt="RPLKit architecture chart: entry points, Rust/C++ runtime, TUI, tools and config data flow" width="1200" />
+</p>
+
 ### Core
 
 The core runtime is built primarily with:
@@ -146,11 +150,12 @@ RPLKit aims to become a small but extensible developer platform rather than a st
 * [x] Introduce C++ / Rust architecture
 * [x] Design modular system
 * [x] Introduce System Module
-* [x] Support Python-based tools (`tools/python/`, 8 tools, stdlib-only)
-* [x] Support TypeScript-based tools (`tools/typescript/hello.ts` via node runtime)
-* [x] Expand module API (`modules/` ToolMeta interface + manifests)
-* [ ] Improve module isolation
-* [x] Add module discovery (C++/Rust/Python `--list` from `tools/*` + manifests)
+* [x] Support Python-based tools (8 tools, stdlib-only, embed-first via PyO3)
+* [x] Support TypeScript-based tools (`tools/hello/impl.ts`, swc + QuickJS embed)
+* [x] Expand module API (`modules/` ToolMeta interface + `tool.json` v2 manifests)
+* [x] Native-first execution chain (native → embed → sistem fallback + `executed_by`)
+* [ ] Improve module isolation (sandboxing embed)
+* [x] Add module discovery (`tools/*/tool.json`, identik di 3 core)
 * [ ] Improve runtime management
 * [ ] Expand developer utilities
 
@@ -190,28 +195,77 @@ This makes the project easier to extend as the number of developer tools grows.
 
 ## Project Structure
 
-The exact structure may evolve as development continues.
-
 ```text
 rplkit/
 │
 ├── core/
-│   ├── cpp/
-│   └── rust/
+│   ├── cpp/          # CLI + menu + FFI tipis ke librplkit_runtime.a
+│   └── rust/         # workspace: rplkit-core + rplkit-runtime (runner)
+│       ├── rplkit-core/     # primitif aman: calc, base64, uuid, time
+│       └── rplkit-runtime/  # registry, exec_native/py/js, chain, FFI
 │
-├── modules/
-│   ├── python/
-│   ├── typescript/
-│   └── native/
+├── modules/          # System Module (Python dev-runner, tanpa build)
+│   ├── manifests.py  # scan tools/*/tool.json
+│   ├── python_runtime.py
+│   ├── typescript_runtime.py
+│   └── native_runtime.py
 │
-├── tools/
-│   ├── python/
-│   └── typescript/
+├── tools/<nama>/     # folder dinamis per tool
+│   ├── tool.json     # manifest v2: exec chain + entries
+│   ├── native.rs     # (rencana) logika native per tool
+│   ├── impl.py       # implementasi Python (embed-first via PyO3)
+│   └── impl.ts       # implementasi TypeScript (swc + QuickJS)
 │
-├── config/
-│
+├── config/default.json
+├── build.sh          # cargo build → cmake build (wajib urut)
 └── README.md
 ```
+
+### Execution chain
+
+Setiap tool mendeklarasikan rantai di `tool.json`, mis.
+`"exec": ["native", "py-embed", "py-sys"]`. Runner mencoba berurutan —
+interpreter sistem (`python3`/`node`) hanya jalan bila rantai native
+gagal. `--verbose` menampilkan `executed_by` yang sebenarnya mengeksekusi.
+
+### Build
+
+```sh
+./build.sh            # debug: cargo + cmake
+./build.sh --release  # rilis
+python3 -m unittest discover -s tests   # Python (tanpa pytest)
+cargo test --manifest-path core/rust/Cargo.toml  # Rust
+```
+
+### Dua mode: CLI + TUI
+
+```text
+             RPLKit
+               │
+       ┌───────┴────────┐
+       │                │
+     CLI              TUI
+       │                │
+ scripting          interactive
+ automation         developer UX
+```
+
+Tanpa argumen + tty → terminal workspace (`ratatui`, monokrom + satu
+aksen Blue Iris): Overview (system + recent), Tools (search `/`),
+Exec (timing + `executed_by` + copy), Modules (toggle `Space`),
+palette (`Ctrl+K`), Logs, Help. Tanpa tty (pipe/script) → teks bantuan,
+tak pernah hang.
+
+```sh
+rplkit                              # TUI
+rplkit system-info                   # langsung jalan (scripting)
+rplkit module list                   # modul + status
+rplkit module disable school-tools   # overlay config/modules.json
+```
+
+Keybinding: `1/2/3` Tools·Modules·Logs, `?` Help, `Enter` run/detail,
+`Space` enable/disable, `Ctrl+R`/`Ctrl+Y` (Exec) run-again/copy,
+`Esc` back, `q` quit.
 
 ---
 

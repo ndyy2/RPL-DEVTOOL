@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 namespace rplkit {
 
@@ -19,6 +20,7 @@ private:
     int interactive() const;
     int list_tools() const;
     void print_help(const char* prog) const;
+    std::vector<std::string> split_words(const std::string& line) const;
 };
 
 }  // namespace rplkit

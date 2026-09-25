@@ -29,8 +29,14 @@ class ToolMeta:
     # native: builtin id; python/typescript: path script relatif repo root
     entry: str
     description: str = ""
+    # Modul pemilik (tool.json#module) dan grup tampil (default = module).
+    module: str = ""
+    group: str = ""
     # Callable hanya untuk tool Python yang sudah di-import (in-process).
     handler: Callable[[], None] | None = None
+
+    def group_name(self) -> str:
+        return self.group or self.module
 
 
 # Builtin native — SELALU tersedia, cerminan dari

@@ -1,0 +1,12 @@
+{
+  "name": "process",
+  "version": "2.1.0",
+  "description": "Process management (top by memory)",
+  "module": "system-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "process"
+  }
+}

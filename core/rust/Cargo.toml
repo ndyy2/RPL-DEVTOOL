@@ -1,14 +1,30 @@
-[package]
-name = "rplkit-core"
+[workspace]
+members = ["rplkit-core", "rplkit-runtime", "rplkit-tui"]
+resolver = "2"
+
+[workspace.package]
 version = "0.2.0"
 edition = "2021"
-description = "RPLKit safe, performant core components in Rust (memory-safe counterpart to core/cpp)"
 license = "MIT"
 
-[lib]
-name = "rplkit_core"
-path = "src/lib.rs"
-
-[[bin]]
-name = "rplkit"
-path = "src/main.rs"
+[workspace.dependencies]
+pyo3 = { version = "0.29", features = ["auto-initialize"] }
+rquickjs = { version = "0.14" }
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
+swc_core = { version = "80", features = [
+  "common",
+  "ecma_ast",
+  "ecma_parser",
+  "ecma_parser_typescript",
+  "ecma_visit",
+  "ecma_transforms",
+  "ecma_transforms_typescript",
+  "ecma_codegen",
+] }
+rplkit-core = { path = "rplkit-core" }
+rplkit-runtime = { path = "rplkit-runtime" }
+ratatui = { version = "0.30" }
+crossterm = { version = "0.29" }
+sysinfo = { version = "0.39" }
+nucleo = { version = "0.5" }

@@ -1,0 +1,17 @@
+{
+  "name": "converter",
+  "version": "0.2.0",
+  "description": "Temperature / length / weight converter (Python tool)",
+  "exec": [
+    "native",
+    "py-embed",
+    "py-sys"
+  ],
+  "native": {
+    "op": "convert"
+  },
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

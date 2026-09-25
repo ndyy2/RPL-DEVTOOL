@@ -1,0 +1,17 @@
+{
+  "name": "encoder",
+  "version": "0.2.0",
+  "description": "Base64 / hex / URL / ROT13 encoder-decoder (Python tool)",
+  "exec": [
+    "native",
+    "py-embed",
+    "py-sys"
+  ],
+  "native": {
+    "op": "codec"
+  },
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

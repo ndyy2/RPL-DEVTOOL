@@ -1,16 +1,18 @@
 """Module Manager (Python) — discovery + dispatch antar runtime.
 
-Cerminan dari core/cpp ModuleManager: urutan discovery sama
-(native builtins → tools/python → tools/typescript → legacy tools/),
-sehingga `rplkit --list` identik di semua core.
+Discovery murni dari manifest (`tools/*/tool.json`), sama seperti
+registry Rust — sehingga `rplkit --list` identik di semua core.
+Op native dijalankan MELALUI tool pemiliknya (mis. `calculator`),
+sementara runtime `native` langsung (lawan bicara biner) ditangani
+`modules.native_runtime` bila biner tersedia.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from modules import NATIVE_BUILTINS, ToolMeta
-from modules import python_runtime, typescript_runtime
+from modules import ToolMeta
+from modules import manifests, python_runtime, typescript_runtime
 
 
 class ModuleManager:
@@ -19,10 +21,9 @@ class ModuleManager:
         self._tools: list[ToolMeta] = []
 
     def discover(self) -> list[ToolMeta]:
-        tools: list[ToolMeta] = list(NATIVE_BUILTINS)
-        tools.extend(python_runtime.discover(self.repo_root))
-        tools.extend(typescript_runtime.discover(self.repo_root))
-        # De-duplikasi: layout baru menang, nama pertama dipertahankan.
+        # Manifest = satu-satunya sumber (semua runtime, overlay-aware).
+        tools = manifests.discover(self.repo_root)
+        # De-duplikasi: nama pertama dipertahankan.
         uniq: list[ToolMeta] = []
         seen: set[str] = set()
         for t in tools:

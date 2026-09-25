@@ -1,0 +1,17 @@
+{
+  "name": "uuid_generator",
+  "version": "0.2.0",
+  "description": "UUID v1/v4 generator (Python tool)",
+  "exec": [
+    "native",
+    "py-embed",
+    "py-sys"
+  ],
+  "native": {
+    "op": "uuid"
+  },
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

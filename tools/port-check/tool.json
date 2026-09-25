@@ -1,0 +1,12 @@
+{
+  "name": "port-check",
+  "version": "2.0.0",
+  "description": "Check TCP port states",
+  "module": "network-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "portcheck"
+  }
+}

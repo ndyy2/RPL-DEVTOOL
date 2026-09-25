@@ -1,0 +1,8 @@
+{
+  "name": "git-tools",
+  "version": "1.4.2",
+  "author": "RPLKit",
+  "description": "Repository helpers",
+  "runtime": "mixed",
+  "enabled_by_default": true
+}

@@ -1,0 +1,8 @@
+{
+  "name": "dev-tools",
+  "version": "0.2.0",
+  "author": "RPLKit",
+  "description": "Developer utilities (calculator, converters, formatters)",
+  "runtime": "mixed",
+  "enabled_by_default": true
+}

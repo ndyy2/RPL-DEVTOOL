@@ -1,0 +1,13 @@
+[package]
+name = "rplkit-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RPLKit safe primitives in Rust: calc, encodings, ids, time, manifests, system snapshot"
+
+[lib]
+name = "rplkit_core"
+path = "src/lib.rs"
+
+[dependencies]
+sysinfo.workspace = true

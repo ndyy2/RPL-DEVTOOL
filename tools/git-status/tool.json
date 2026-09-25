@@ -1,0 +1,12 @@
+{
+  "name": "git-status",
+  "version": "1.4.2",
+  "description": "Extended status",
+  "module": "git-tools",
+  "exec": [
+    "native"
+  ],
+  "native": {
+    "op": "gitstatus"
+  }
+}

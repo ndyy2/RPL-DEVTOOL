@@ -12,10 +12,19 @@ import subprocess
 from pathlib import Path
 
 from . import ToolMeta
+from . import manifests
 
 
 def discover(repo_root: str | Path) -> list[ToolMeta]:
     root = Path(repo_root)
+    found = [t for t in manifests.discover(root) if t.runtime == "typescript"]
+    if found:
+        return found
+    return _discover_legacy(root)
+
+
+def _discover_legacy(repo_root: Path) -> list[ToolMeta]:
+    root = repo_root
     d = root / "tools" / "typescript"
     if not d.is_dir():
         return []

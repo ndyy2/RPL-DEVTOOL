@@ -1,0 +1,13 @@
+{
+  "name": "json_formatter",
+  "version": "0.2.0",
+  "description": "JSON validator & pretty-printer (Python tool)",
+  "exec": [
+    "py-embed",
+    "py-sys"
+  ],
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

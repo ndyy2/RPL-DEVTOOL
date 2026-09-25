@@ -1,0 +1,19 @@
+[package]
+name = "rplkit-runtime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RPLKit true runner: registry + native/embedded/fallback execution chain (links into C++ core as static lib)"
+
+[lib]
+name = "rplkit_runtime"
+path = "src/lib.rs"
+crate-type = ["staticlib", "rlib"]
+
+[dependencies]
+rplkit-core.workspace = true
+pyo3.workspace = true
+rquickjs.workspace = true
+swc_core.workspace = true
+serde.workspace = true
+serde_json.workspace = true

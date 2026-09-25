@@ -1,0 +1,13 @@
+{
+  "name": "hello",
+  "version": "0.2.0",
+  "description": "Contoh minimal TypeScript tool (greeting via node)",
+  "exec": [
+    "js-embed",
+    "node-sys"
+  ],
+  "entries": {
+    "typescript": "impl.ts"
+  },
+  "module": "dev-tools"
+}

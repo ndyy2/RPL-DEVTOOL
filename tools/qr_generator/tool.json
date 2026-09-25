@@ -1,0 +1,13 @@
+{
+  "name": "qr_generator",
+  "version": "0.2.0",
+  "description": "QR PNG (needs qrcode lib) with ASCII-box fallback (Python tool)",
+  "exec": [
+    "py-embed",
+    "py-sys"
+  ],
+  "entries": {
+    "python": "impl.py"
+  },
+  "module": "dev-tools"
+}

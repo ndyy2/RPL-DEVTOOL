@@ -1,0 +1,9 @@
+{
+  "_comment": "Overlay enable/disable. tool.json tidak pernah disentuh oleh tooling.",
+  "modules": {
+    "school-tools": {
+      "enabled": false
+    }
+  },
+  "tools": {}
+}

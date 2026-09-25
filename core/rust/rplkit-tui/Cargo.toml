@@ -1,0 +1,21 @@
+[package]
+name = "rplkit-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "RPLKit terminal workspace: monochrome TUI with single Blue Iris accent (ratatui)"
+
+[lib]
+name = "rplkit_tui"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rplkit"
+path = "src/main.rs"
+
+[dependencies]
+rplkit-core.workspace = true
+rplkit-runtime.workspace = true
+ratatui.workspace = true
+crossterm.workspace = true
+nucleo.workspace = true

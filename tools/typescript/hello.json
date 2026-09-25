@@ -1,5 +1,0 @@
-{
-  "name": "hello",
-  "runtime": "typescript",
-  "description": "Contoh minimal TypeScript tool (greeting via node)"
-}

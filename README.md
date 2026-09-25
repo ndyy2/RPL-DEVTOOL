@@ -3,7 +3,7 @@
 **Upgraded by Ndyndy — 12 RPL-1**
 
 <p align="center">
-  <img src="assets/architecture.svg" alt="RPLKit animated architecture: native C++/Rust core, System Module, and replaceable tools" width="860" />
+  <img src="assets/architecture.svg" alt="RPLKit animated architecture: native C++/Rust core, System Module, and replaceable tools" width="900" />
 </p>
 
 > A modern, modular developer toolkit rebuilt from Python into a native C++ and Rust-based core.

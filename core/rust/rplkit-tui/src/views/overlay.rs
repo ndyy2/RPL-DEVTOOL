@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use super::{chrome, row_style};
+use super::{chrome, kbd, row_style, sel_marker};
 use crate::{app::App, theme};
 
 fn centered(area: Rect, w: u16, h: u16) -> Rect {
@@ -43,7 +43,8 @@ pub fn render_palette(frame: &mut Frame, app: &App) {
         shown += 1;
         let sel = pos == app.palette_cursor;
         lines.push(Line::from(vec![
-            Span::styled(if sel { "▶ " } else { "◇ " }, theme::accent()),
+            sel_marker(sel),
+            Span::styled("◇ ", theme::accent()),
             Span::styled(label.clone(), row_style(sel)),
         ]));
     }
@@ -61,7 +62,13 @@ pub fn render_palette(frame: &mut Frame, app: &App) {
 }
 
 pub fn render_logs(frame: &mut Frame, app: &App) {
-    let body = chrome(frame, app, frame.area(), "logs", "Esc Back   q Quit");
+    let body = chrome(
+        frame,
+        app,
+        frame.area(),
+        "logs",
+        &format!("{} back  {} quit", kbd("Esc"), kbd("q")),
+    );
     let mut lines = vec![Line::from(Span::styled("SESSION LOG", theme::dim())), Line::from("")];
     if app.session_log.is_empty() {
         lines.push(Line::from(Span::styled("no runs this session", theme::dim())));
@@ -70,10 +77,12 @@ pub fn render_logs(frame: &mut Frame, app: &App) {
         let sel = pos == app.cursor;
         let mark = if r.code == 0 { "✓" } else { "✗" };
         lines.push(Line::from(vec![
-            Span::styled(if sel { "▶ " } else { "  " }, theme::accent()),
+            sel_marker(sel),
+            Span::styled(format!("{mark} "), theme::normal()),
+            Span::styled(format!("{:<16}", r.tool), row_style(sel)),
             Span::styled(
-                format!("{mark} {:<16} {}ms  {}  {}", r.tool, r.ms, r.by, r.args.join(" ")),
-                row_style(sel),
+                format!("{:>6}ms  {:<8}  {}", r.ms, r.by, r.args.join(" ")),
+                theme::dim(),
             ),
         ]));
     }
@@ -81,19 +90,31 @@ pub fn render_logs(frame: &mut Frame, app: &App) {
 }
 
 pub fn render_help(frame: &mut Frame, app: &App) {
-    let body = chrome(frame, app, frame.area(), "help", "Esc Back   q Quit");
+    let body = chrome(
+        frame,
+        app,
+        frame.area(),
+        "help",
+        &format!("{} back  {} quit", kbd("Esc"), kbd("q")),
+    );
+    let key = |k: &str, desc: &str| {
+        Line::from(vec![
+            Span::styled(format!("  {:<22}", kbd(k)), theme::normal()),
+            Span::styled(desc.to_string(), theme::dim()),
+        ])
+    };
     let lines = vec![
         Line::from(Span::styled("KEYS", theme::dim())),
         Line::from(""),
-        Line::from(Span::styled("  1 / 2 / 3       Tools · Modules · Logs", theme::normal())),
-        Line::from(Span::styled("  ↑↓              Navigate", theme::normal())),
-        Line::from(Span::styled("  Enter           Run / open details", theme::normal())),
-        Line::from(Span::styled("  /               Search tools", theme::normal())),
-        Line::from(Span::styled("  Space           Enable / disable module", theme::normal())),
-        Line::from(Span::styled("  Ctrl+K          Command palette", theme::normal())),
-        Line::from(Span::styled("  Ctrl+R / Ctrl+Y  (Exec) run again / copy output", theme::normal())),
-        Line::from(Span::styled("  Esc             Back", theme::normal())),
-        Line::from(Span::styled("  q               Quit", theme::normal())),
+        key("1 / 2 / 3", "Tools · Modules · Logs"),
+        key("↑↓", "Navigate"),
+        key("Enter", "Run / open details"),
+        key("/", "Search tools"),
+        key("Space", "Enable / disable module"),
+        key("Ctrl+K", "Command palette"),
+        key("Ctrl+R / Ctrl+Y", "(Exec) run again / copy output"),
+        key("Esc", "Back"),
+        key("q", "Quit (outside text input; Esc first)"),
         Line::from(""),
         Line::from(Span::styled("Two modes: CLI for scripting, TUI for interactive work.", theme::dim())),
     ];

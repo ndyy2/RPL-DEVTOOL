@@ -1,7 +1,8 @@
 """Module Manager (Python) — discovery + dispatch antar runtime.
 
-Discovery murni dari manifest (`tools/*/tool.json`), sama seperti
-registry Rust — sehingga `rplkit --list` identik di semua core.
+Sumber kebenaran: registry Rust via biner bila ada (`rust_bridge`),
+else discovery manifest lokal — hasil identik di kedua jalur sehingga
+`rplkit --list` sama di semua core.
 Op native dijalankan MELALUI tool pemiliknya (mis. `calculator`),
 sementara runtime `native` langsung (lawan bicara biner) ditangani
 `modules.native_runtime` bila biner tersedia.
@@ -12,7 +13,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from modules import ToolMeta
-from modules import manifests, python_runtime, typescript_runtime
+from modules import manifests, python_runtime, rust_bridge, typescript_runtime
 
 
 class ModuleManager:
@@ -21,8 +22,10 @@ class ModuleManager:
         self._tools: list[ToolMeta] = []
 
     def discover(self) -> list[ToolMeta]:
-        # Manifest = satu-satunya sumber (semua runtime, overlay-aware).
-        tools = manifests.discover(self.repo_root)
+        # Sumber kebenaran: biner Rust bila ada (registry + overlay di sana),
+        # else discovery manifest lokal. Hasil identik di kedua jalur.
+        bridged = rust_bridge.list_via_bin(self.repo_root)
+        tools = bridged if bridged is not None else manifests.discover(self.repo_root)
         # De-duplikasi: nama pertama dipertahankan.
         uniq: list[ToolMeta] = []
         seen: set[str] = set()

@@ -9,6 +9,7 @@ from __future__ import annotations
 import importlib
 import json
 from pathlib import Path
+from typing import Any
 
 from . import ToolMeta
 from . import manifests
@@ -73,14 +74,29 @@ def _discover_legacy(repo_root: Path) -> list[ToolMeta]:
     return found
 
 
-def load(meta: ToolMeta):
-    """Import modul tool; raise ImportError/AttributeError bila tak valid."""
+_module_cache: dict[str, object] = {}
+
+
+def load(meta: ToolMeta) -> Any:
+    """Import modul tool (sekali per proses; cache hit berikutnya).
+
+    Raise ImportError/AttributeError bila tak valid.
+    """
+    cached = _module_cache.get(meta.entry)
+    if cached is not None:
+        return cached
     dotted = meta.entry.replace("/", ".").removesuffix(".py")
     module = importlib.import_module(dotted)
     run = getattr(module, "run")
     if not callable(run):
         raise AttributeError(f"tool {meta.name!r} has no callable run()")
+    _module_cache[meta.entry] = module
     return module
+
+
+def clear_cache() -> None:
+    """Kosongkan cache (untuk test + `--dev`)."""
+    _module_cache.clear()
 
 
 def run(meta: ToolMeta) -> int:

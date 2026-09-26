@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use super::{chrome, row_style};
+use super::{chrome, kbd, row_style, sel_marker};
 use crate::{app::App, theme};
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -16,7 +16,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         app,
         frame.area(),
         "modules",
-        "Enter Details   Space Enable/Disable   Esc Back   q Quit",
+        &format!(
+            "{} details  {} enable/disable  {} back",
+            kbd("Enter"),
+            kbd("Space"),
+            kbd("Esc"),
+        ),
     );
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -24,10 +29,11 @@ pub fn render(frame: &mut Frame, app: &App) {
         .split(body);
     let enabled = app.modules.iter().filter(|m| m.enabled).count();
     frame.render_widget(
-        Paragraph::new(Line::from(Span::styled(
-            format!("Installed: {}                              Enabled: {}", app.modules.len(), enabled),
-            theme::dim(),
-        ))),
+        Paragraph::new(Line::from(vec![
+            Span::styled(format!("{} installed", app.modules.len()), theme::dim()),
+            Span::styled("   ", theme::dim()),
+            Span::styled(format!("{} enabled", enabled), theme::normal()),
+        ])),
         rows[0],
     );
     let mut lines = Vec::new();
@@ -36,11 +42,12 @@ pub fn render(frame: &mut Frame, app: &App) {
         let dot = if m.enabled { "●" } else { "○" };
         let state = if m.enabled { "enabled" } else { "disabled" };
         lines.push(Line::from(vec![
-            Span::styled(if sel { "▶ " } else { "  " }, theme::accent()),
-            Span::styled(
-                format!("{dot} {:<16} {:<10} {:<9} v{}", m.name, m.runtime, state, m.version),
-                row_style(sel),
-            ),
+            sel_marker(sel),
+            Span::styled(format!("{dot} "), theme::accent()),
+            Span::styled(format!("{:<16}", m.name), row_style(sel)),
+            Span::styled(format!("{:<10} ", m.runtime), theme::dim()),
+            Span::styled(format!("{:<8} ", state), if sel { row_style(true) } else { theme::dim() }),
+            Span::styled(format!("v{}", m.version), theme::dim()),
         ]));
     }
     frame.render_widget(Paragraph::new(lines), rows[1]);
@@ -109,7 +116,7 @@ mod tests {
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = crate::views::screen_text(&mut term, 80, 24);
-        for expect in ["Installed:", "system-tools", "school-tools", "disabled"] {
+        for expect in ["5 installed", "4 enabled", "system-tools", "school-tools", "disabled", "▌ "] {
             assert!(text.contains(expect), "missing {expect}\n{text}");
         }
     }

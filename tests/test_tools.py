@@ -153,6 +153,44 @@ class RegistryTest(unittest.TestCase):
                 break
 
 
+class BridgeTest(unittest.TestCase):
+    def test_bridge_matches_local_discovery(self):
+        from modules import manifests, rust_bridge
+
+        root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        bridged = rust_bridge.list_via_bin(root)
+        if bridged is None:
+            self.skipTest("biner Rust belum di-build")
+        local = manifests.discover(root)
+        self.assertEqual({t.name for t in bridged}, {t.name for t in local})
+
+    def test_bridge_fallback_without_binary(self):
+        import tempfile
+        from modules import rust_bridge
+
+        with tempfile.TemporaryDirectory() as d:
+            # Tanpa core/rust/target → None → pemanggil pakai lokal.
+            self.assertIsNone(rust_bridge.list_via_bin(d))
+            self.assertIsNone(rust_bridge.find_bin(d))
+
+    def test_module_cache_reuses_import(self):
+        from modules import python_runtime
+
+        python_runtime.clear_cache()
+        mod1 = python_runtime.load(_meta("calculator"))
+        mod2 = python_runtime.load(_meta("calculator"))
+        self.assertIs(mod1, mod2)
+        self.assertIn("tools/python/calculator.py", python_runtime._module_cache)
+        python_runtime.clear_cache()
+        self.assertEqual(python_runtime._module_cache, {})
+
+
+def _meta(name):
+    from modules import ToolMeta
+
+    return ToolMeta(name=name, runtime="python", entry=f"tools/python/{name}.py")
+
+
 class ConverterEdgeTest(unittest.TestCase):
     def test_kelvin_identity(self):
         from tools.python.converter import convert_temperature

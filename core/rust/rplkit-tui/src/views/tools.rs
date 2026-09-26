@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use super::{chrome, row_style};
+use super::{chrome, kbd, row_style, sel_marker};
 use crate::{app::App, theme};
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -16,7 +16,13 @@ pub fn render(frame: &mut Frame, app: &App) {
         app,
         frame.area(),
         "tools",
-        "↑↓ Navigate   Enter Run   / Search   Esc Back   q Quit",
+        &format!(
+            "{} navigate  {} run  {} search  {} back",
+            kbd("↑↓"),
+            kbd("Enter"),
+            kbd("/"),
+            kbd("Esc"),
+        ),
     );
     let rows = Layout::default()
         .direction(Direction::Vertical)
@@ -47,13 +53,13 @@ pub fn render(frame: &mut Frame, app: &App) {
         if sel {
             sel_line = lines.len();
         }
-        let marker = if sel { "▶ " } else { "  " };
+        // Runtime rata kanan kolom 72 agar sejajar di semua baris.
+        let runtime = format!("{:>10}", t.runtime);
         lines.push(Line::from(vec![
-            Span::styled(marker, theme::accent()),
-            Span::styled(
-                format!("{:<18} {:<32} {}", t.name, t.desc, t.runtime),
-                row_style(sel),
-            ),
+            sel_marker(sel),
+            Span::styled(format!("{:<20}", t.name), row_style(sel)),
+            Span::styled(format!("{:<34} ", t.desc), if sel { row_style(true) } else { theme::dim() }),
+            Span::styled(runtime, if sel { row_style(true) } else { theme::dim() }),
         ]));
     }
     if lines.is_empty() {
@@ -92,7 +98,7 @@ mod tests {
         let mut term = Terminal::new(backend).unwrap();
         term.draw(|f| render(f, &app)).unwrap();
         let text = crate::views::screen_text(&mut term, 100, 44);
-        for expect in ["Search:", "SYSTEM-TOOLS", "system-info", "▶ system-info"] {
+        for expect in ["Search:", "SYSTEM-TOOLS", "system-info", "▌ system-info"] {
             assert!(text.contains(expect), "missing {expect}\n{text}");
         }
     }

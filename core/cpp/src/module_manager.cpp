@@ -126,6 +126,22 @@ static int parse_code(const std::string& json) {
     }
 }
 
+// Angka setelah "key": ... ; -1 bila tak ketemu.
+static long parse_long_field(const std::string& json, const char* key) {
+    std::string q = std::string("\"") + key + "\"";
+    std::size_t pos = json.find(q);
+    if (pos == std::string::npos) return -1;
+    pos = json.find(':', pos);
+    if (pos == std::string::npos) return -1;
+    ++pos;
+    while (pos < json.size() && std::isspace(static_cast<unsigned char>(json[pos]))) ++pos;
+    try {
+        return std::stol(json.substr(pos));
+    } catch (...) {
+        return -1;
+    }
+}
+
 int ModuleManager::run(const ToolInfo& tool, const std::vector<std::string>& args,
                        bool verbose) const {
     try {
@@ -139,6 +155,16 @@ int ModuleManager::run(const ToolInfo& tool, const std::vector<std::string>& arg
         if (verbose) {
             std::string by = sys::json_string_field(text, "executed_by");
             if (!by.empty()) std::cerr << "executed_by: " << by << "\n";
+            long dms = parse_long_field(text, "discover_ms");
+            if (dms >= 0) std::cerr << "discover: " << dms << "ms\n";
+            for (const auto& obj : split_objects(text)) {
+                std::string step = sys::json_string_field(obj, "step");
+                if (step.empty()) continue;  // bukan entri attempts
+                long ms = parse_long_field(obj, "ms");
+                bool ok = obj.find("\"ok\":true") != std::string::npos;
+                std::cerr << "  step " << step << ": " << ms << "ms " << (ok ? "ok" : "skip/fail")
+                          << "\n";
+            }
         }
         return parse_code(text);
     } catch (const std::exception& e) {

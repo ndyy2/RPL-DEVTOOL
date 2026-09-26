@@ -20,21 +20,23 @@ use ratatui::{
 
 use super::{app::App, theme};
 
-/// Chrome luar: header (nama + versi + status) + footer keybindings.
-pub fn chrome(frame: &mut Frame, app: &App, area: Rect, title: &str, keys: &str) -> Rect {
+/// Chrome luar: header satu baris (nama kiri, status kanan) + footer
+/// keybinding terkelompok. Subjudul "Developer Toolkit" dihapus —
+/// nama + versi + status cukup (Fase 2 rafinasi).
+pub fn chrome(frame: &mut Frame, _app: &App, area: Rect, title: &str, keys: &str) -> Rect {
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+        .constraints([Constraint::Length(2), Constraint::Min(0), Constraint::Length(2)])
         .split(area);
     let version = env!("CARGO_PKG_VERSION");
-    let header = Paragraph::new(vec![
-        Line::from(vec![
-            Span::styled("RPLKIT", theme::accent()),
-            Span::styled(format!("  v{version}  "), theme::dim()),
-            Span::styled("● READY", theme::accent()),
-        ]),
-        Line::from(Span::styled("Developer Toolkit", theme::dim())),
-    ])
+    let left = format!("RPLKIT  v{version}");
+    let right = "● READY";
+    let mid = area.width.saturating_sub(left.len() as u16 + right.len() as u16 + 2) as usize;
+    let header = Paragraph::new(Line::from(vec![
+        Span::styled(left, theme::accent()),
+        Span::raw(" ".repeat(mid)),
+        Span::styled(right, theme::accent()),
+    ]))
     .block(Block::default().borders(Borders::BOTTOM).border_style(theme::border(false)));
     frame.render_widget(header, rows[0]);
     let footer = Paragraph::new(Line::from(Span::styled(keys, theme::dim()))).block(
@@ -45,22 +47,42 @@ pub fn chrome(frame: &mut Frame, app: &App, area: Rect, title: &str, keys: &str)
     rows[1]
 }
 
-/// Section header tipis gaya mock ("SYSTEM" + garis).
+/// Section header tipis: judul + garis proporsional (tak penuh lebar).
 pub fn section(frame: &mut Frame, area: Rect, title: &str) {
+    let dashes = (area.width as usize)
+        .saturating_sub(title.len() + 4)
+        .min(24)
+        .max(4);
     let line = Paragraph::new(Line::from(vec![
         Span::styled(format!("{title}  "), theme::normal()),
-        Span::styled("─".repeat(area.width.saturating_sub(title.len() as u16 + 4) as usize), theme::dim()),
+        Span::styled("─".repeat(dashes), theme::dim()),
     ]));
     frame.render_widget(line, area);
 }
 
-/// Gaya baris daftar: terpilih = aksen, biasa = normal.
+/// Gaya baris daftar: terpilih = teks terang + bold, latar tetap gelap.
+/// Lihat theme::selected — blok aksen penuh dihapus (Fase 1 rafinasi).
 pub fn row_style(selected: bool) -> Style {
     if selected {
         theme::selected()
     } else {
         theme::normal()
     }
+}
+
+/// Marker 2-kolom sisi kiri baris: "▌" aksen bila terpilih, spasi bila tidak.
+/// Lebar konstan menjaga kolom teks sejajar di semua baris.
+pub fn sel_marker(selected: bool) -> Span<'static> {
+    if selected {
+        Span::styled("▌ ", theme::select_bar())
+    } else {
+        Span::raw("  ")
+    }
+}
+
+/// Tombol keyboard terbalik: `▏Enter▕` — konsisten di semua footer/help.
+pub fn kbd(label: &str) -> String {
+    format!("▏{label}▕")
 }
 
 /// Dispatch render sesuai view aktif + overlay palette.

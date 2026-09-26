@@ -9,7 +9,7 @@
 //! ```
 
 use rplkit_core::find_repo_root;
-use rplkit_runtime::{chain, modules, registry};
+use rplkit_runtime::{modules, registry};
 use std::env;
 use std::path::PathBuf;
 
@@ -49,19 +49,38 @@ fn help(prog: &str) {
     println!("RPLKit Developer Tools (native Rust runner)\n");
     println!("Usage:");
     println!("  {prog}                                 TUI (when stdout is a tty)");
-    println!("  {prog} --list [--all]                  list enabled tools (--all: incl. disabled)");
-    println!("  {prog} --run <tool> [args...] [--verbose]");
+    println!("  {prog} --list [--all] [--dev]          list enabled tools (--all: incl. disabled)");
+    println!("  {prog} --run <tool> [args...] [--verbose] [--dev]");
     println!("                                         run a tool");
     println!("  {prog} <tool> [args...]                 run a tool (scripting short form)");
     println!("  {prog} module list [--all]              list modules");
     println!("  {prog} module info <name>               module details");
     println!("  {prog} module enable|disable <name>     toggle module (or single tool)");
+    println!("  {prog} tools build-index               rebuild .cache/tools.idx");
     println!("  {prog} --help                          this help");
+    println!();
+    println!("--dev: selalu rescan manifest + diagnostik (abaikan index).");
 }
 
-fn print_tools(root: &std::path::Path, all: bool) {
-    let tools = if all { registry::discover(root) } else { registry::discover_enabled(root) };
-    for t in &tools {
+fn print_tools(root: &std::path::Path, all: bool, dev: bool) {
+    if all {
+        if dev {
+            eprintln!("index: bypassed (--dev)");
+        }
+        return print_defs(root, &registry::discover(root));
+    }
+    let reg = registry::Registry::build_opts(root, !dev);
+    if dev {
+        eprintln!("index: skipped (--dev), parsed {} manifest(s)", reg.len());
+    }
+    for t in reg.tools() {
+        println!("{} [{}]  {}", t.name, t.runtime_label, t.description);
+        println!("    entry: {}", t.entry_label);
+    }
+}
+
+fn print_defs(root: &std::path::Path, defs: &[registry::ToolDef]) {
+    for t in defs {
         println!("{} [{}]  {}", t.name, display_runtime(t), t.description);
         println!("    entry: {}", display_entry(root, t));
     }
@@ -180,22 +199,30 @@ fn main() {
         "--help" | "-h" | "help" => help(prog),
         "--list" | "list" => {
             let root = repo_root();
-            print_tools(&root, argv.iter().any(|a| a == "--all"));
+            print_tools(
+                &root,
+                argv.iter().any(|a| a == "--all"),
+                argv.iter().any(|a| a == "--dev"),
+            );
         }
         "--run" | "run" => {
             if argv.len() < 3 {
                 eprintln!("usage: {prog} --run <tool> [args...]");
                 std::process::exit(2);
             }
-            let verbose = argv.last().map(|s| s == "--verbose").unwrap_or(false);
-            let end = if verbose { argv.len() - 1 } else { argv.len() };
-            let args: Vec<String> = argv[3..end].to_vec();
+            let verbose = argv.iter().any(|a| a == "--verbose");
+            let dev = argv.iter().any(|a| a == "--dev");
+            let args: Vec<String> = argv[3..]
+                .iter()
+                .filter(|a| a.as_str() != "--verbose" && a.as_str() != "--dev")
+                .cloned()
+                .collect();
             let root = repo_root();
-            let tools = registry::discover_enabled(&root);
-            match registry::find(&tools, &argv[2]) {
-                Some(tool) => {
+            let reg = registry::Registry::build_opts(&root, !dev);
+            match reg.handle(&argv[2]) {
+                Some(h) => {
                     let t0 = std::time::Instant::now();
-                    let o = chain::run_tool(&root, tool, &args);
+                    let o = h.execute_passthrough(&args);
                     rplkit_runtime::history::append(
                         &root,
                         rplkit_runtime::history::RunRecord {
@@ -209,6 +236,20 @@ fn main() {
                     );
                     if verbose {
                         eprintln!("executed_by: {}", o.executed_by);
+                        eprintln!(
+                            "discover: {}ms (index: {}, rescanned: {})",
+                            reg.build_ms,
+                            if reg.index_hit { "hit" } else { "miss" },
+                            reg.rescanned
+                        );
+                        for a in &o.attempts {
+                            eprintln!(
+                                "  step {}: {}ms {}",
+                                a.step,
+                                a.ms,
+                                if a.ok { "ok" } else { "skip/fail" }
+                            );
+                        }
                     }
                     std::process::exit(o.code);
                 }
@@ -226,6 +267,24 @@ fn main() {
             let root = repo_root();
             std::process::exit(cmd_module(&root, &argv[2..].to_vec()));
         }
+        "tools" => {
+            // `rplkit tools build-index` — tulis ulang .cache/tools.idx.
+            if argv.get(2).map(|s| s.as_str()) == Some("build-index") {
+                let root = repo_root();
+                match rplkit_runtime::index::build_index(&root) {
+                    Ok(n) => {
+                        println!("indexed {n} tool(s) → .cache/tools.idx");
+                        std::process::exit(0);
+                    }
+                    Err(e) => {
+                        eprintln!("error: {e}");
+                        std::process::exit(1);
+                    }
+                }
+            }
+            eprintln!("usage: {prog} tools build-index");
+            std::process::exit(2);
+        }
         other if other.starts_with('-') => {
             eprintln!("unknown command: {other}");
             help(prog);
@@ -235,11 +294,11 @@ fn main() {
             // Bentuk scripting: `rplkit <tool> [args...]`.
             let args: Vec<String> = argv[2..].to_vec();
             let root = repo_root();
-            let tools = registry::discover_enabled(&root);
-            match registry::find(&tools, tool) {
-                Some(t) => {
+            let reg = registry::Registry::build(&root);
+            match reg.handle(tool) {
+                Some(h) => {
                     let t0 = std::time::Instant::now();
-                    let o = chain::run_tool(&root, t, &args);
+                    let o = h.execute_passthrough(&args);
                     rplkit_runtime::history::append(
                         &root,
                         rplkit_runtime::history::RunRecord {

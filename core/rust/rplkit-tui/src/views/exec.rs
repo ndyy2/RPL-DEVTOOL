@@ -7,7 +7,7 @@ use ratatui::{
     Frame,
 };
 
-use super::chrome;
+use super::{chrome, kbd};
 use crate::{app::App, theme};
 
 pub fn render(frame: &mut Frame, app: &App) {
@@ -16,25 +16,30 @@ pub fn render(frame: &mut Frame, app: &App) {
         app,
         frame.area(),
         "exec",
-        "Type args + Enter Run   Ctrl+R Again   Ctrl+Y Copy   Esc Back",
+        &format!(
+            "type args + {} run  {} again  {} copy",
+            kbd("Enter"),
+            kbd("Ctrl+R"),
+            kbd("Ctrl+Y"),
+        ),
     );
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)])
+        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(1)])
         .split(body);
     let e = &app.exec;
     let mut head = vec![Line::from(vec![
-        Span::styled(format!("$ rplkit {} ", e.tool), theme::accent()),
+        Span::styled("$ ", theme::accent()),
+        Span::styled(format!("rplkit {} ", e.tool), theme::normal()),
         Span::styled(format!("{}_", e.args_line), theme::normal()),
     ])];
     if let Some(code) = e.code {
-        let status = if code == 0 { "✓ Completed" } else { "✗ Failed" };
-        head.push(Line::from(""));
-        head.push(Line::from(Span::styled(status, theme::normal())));
-        head.push(Line::from(Span::styled(
-            format!("Execution time: {}ms   executed_by: {}", e.ms, e.by),
-            theme::dim(),
-        )));
+        let mark = if code == 0 { "✓" } else { "✗" };
+        let word = if code == 0 { "Completed" } else { "Failed" };
+        head.push(Line::from(vec![
+            Span::styled(format!("{mark} {word}"), theme::normal()),
+            Span::styled(format!("   {}ms · {}", e.ms, e.by), theme::dim()),
+        ]));
     }
     frame.render_widget(Paragraph::new(head), rows[0]);
     let out = if e.output.is_empty() {

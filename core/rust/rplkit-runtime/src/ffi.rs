@@ -190,7 +190,8 @@ pub extern "C" fn rplkit_list_tools(repo: *const c_char) -> *mut c_char {
     }
 }
 
-/// Jalankan tool via chain. Return JSON `{"code":n,"executed_by":"..."}`.
+/// Jalankan tool via chain. Return JSON:
+/// `{"code":n,"executed_by":"...","discover_ms":n,"attempts":[{step,ms,ok}]}`.
 /// Output tool passthrough ke stdout (sama seperti Rust bin).
 #[no_mangle]
 pub extern "C" fn rplkit_run_tool(
@@ -215,13 +216,31 @@ pub extern "C" fn rplkit_run_tool(
             Ok(a) => a,
             Err(e) => return err_json(&e),
         };
+        let t0d = std::time::Instant::now();
         let tools = crate::registry::discover(Path::new(repo));
+        let discover_ms = t0d.elapsed().as_millis();
         let tool = match crate::registry::find(&tools, name) {
             Some(t) => t,
             None => return err_json(&format!("unknown tool: {name}")),
         };
         let o = crate::chain::run_tool(Path::new(repo), tool, &args);
-        format!("{{\"code\":{},\"executed_by\":\"{}\"}}", o.code, o.executed_by)
+        let attempts = o
+            .attempts
+            .iter()
+            .map(|a| {
+                format!(
+                    "{{\"step\":\"{}\",\"ms\":{},\"ok\":{}}}",
+                    a.step,
+                    a.ms,
+                    if a.ok { "true" } else { "false" }
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        format!(
+            "{{\"code\":{},\"executed_by\":\"{}\",\"discover_ms\":{discover_ms},\"attempts\":[{attempts}]}}",
+            o.code, o.executed_by
+        )
     })
     .unwrap_or_else(|_| err_json("native panic (caught at FFI boundary)"));
     return_json(out)

@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use rplkit_core::sys as coresys;
-use rplkit_runtime::{chain, history, modules, registry};
+use rplkit_runtime::{history, modules, registry};
 
 /// Layar TUI. `ModuleDetail` membawa nama modul.
 #[derive(Debug, Clone, PartialEq)]
@@ -58,6 +58,9 @@ pub struct ExecState {
 pub struct App {
     pub repo_root: PathBuf,
     pub view: View,
+    /// Registry terkompilasi — dibangun sekali per refresh, dipakai
+    /// semua eksekusi (tanpa scan/parse ulang per run).
+    pub registry: registry::Registry,
     pub tools: Vec<ToolRow>,
     pub modules: Vec<ModuleRow>,
     pub cursor: usize,
@@ -79,6 +82,7 @@ impl App {
         let mut app = Self {
             repo_root: repo_root.to_path_buf(),
             view: View::Main,
+            registry: registry::Registry::empty(),
             tools: Vec::new(),
             modules: Vec::new(),
             cursor: 0,
@@ -100,21 +104,16 @@ impl App {
 
     /// Muat ulang tools + modules dari disk (setelah enable/disable).
     pub fn refresh(&mut self) {
-        let tools = registry::discover_enabled(&self.repo_root);
+        let reg = registry::Registry::build(&self.repo_root);
+        let tools = reg.tools();
         self.tools = tools
             .iter()
             .map(|t| ToolRow {
                 name: t.name.clone(),
                 desc: t.description.clone(),
-                runtime: if t.py_entry.is_some() {
-                    "python".into()
-                } else if t.ts_entry.is_some() {
-                    "typescript".into()
-                } else {
-                    "native".into()
-                },
+                runtime: t.runtime_label.to_string(),
                 module: t.module.clone(),
-                group: t.group_name().to_string(),
+                group: t.group.clone(),
             })
             .collect();
         let descs = modules::load_descriptors(&self.repo_root);
@@ -132,6 +131,7 @@ impl App {
             .collect();
         self.cursor = 0;
         self.recent = history::load(&self.repo_root);
+        self.registry = reg;
     }
 
     pub fn tick_sys(&mut self) {
@@ -240,13 +240,12 @@ impl App {
         }
     }
 
-    /// Jalankan tool terpilih via chain capture; catat history + sesi.
+    /// Jalankan tool terpilih via handle (tanpa scan/parse ulang).
     pub fn run_tool(&mut self, name: &str, args: &[String]) -> (i32, String) {
-        let tools = registry::discover_enabled(&self.repo_root);
-        let Some(tool) = registry::find(&tools, name) else {
+        let Some(h) = self.registry.handle(name) else {
             return (1, format!("unknown or disabled tool: {name}"));
         };
-        let c = chain::run_tool_captured(&self.repo_root, tool, args);
+        let c = h.execute(args);
         let rec = history::RunRecord {
             tool: name.to_string(),
             args: args.to_vec(),
@@ -302,9 +301,12 @@ impl App {
             }
             return false;
         }
-        // Input argumen Exec view.
-        // (Menyimpang dari mock: 'r'/'c' polos konflik dengan mengetik argumen,
-        // jadi run-again = Ctrl+R, copy = Ctrl+Y. Enter = run.)
+        // Input argumen Exec view: konteks input menelan SEMUA keystroke
+        // (digit/simbol valid sebagai argumen: "2+2", "100 C F").
+        // Navigasi hanya via key non-teks: Esc (back), Enter, Ctrl+*.
+        // Konsekuensi disengaja: q/1-4/? di sini jadi teks; quit via Esc dulu.
+        // 'r'/'c' polos tetap teks (konflik mengetik) → run-again = Ctrl+R,
+        // copy = Ctrl+Y. Enter = run.
         if self.view == View::Exec && !matches!(key.code, KeyCode::Esc) {
             if key.modifiers.contains(KeyModifiers::CONTROL) {
                 match key.code {
@@ -340,10 +342,9 @@ impl App {
                 }
                 _ => {}
             }
-            if !matches!(key.code, KeyCode::Char('1'..='4') | KeyCode::Char('?') | KeyCode::Char('q'))
-            {
-                return false;
-            }
+            // SEKAT: tak ada fallthrough ke match navigasi global.
+            // Semua key di atas sudah ditangani sebagai teks/aksi Exec.
+            return false;
         }
         match key.code {
             KeyCode::Char('q') => {
@@ -569,6 +570,52 @@ mod tests {
     fn split_args_vectors() {
         assert_eq!(split_args("a \"b c\" d"), vec!["a", "b c", "d"]);
         assert_eq!(split_args(""), Vec::<String>::new());
+    }
+
+    #[test]
+    fn exec_input_swallows_nav_keys() {
+        // Regresi: mengetik "1q?" di Exec view DULU memindah view / quit.
+        let mut app = App::new(&test_repo());
+        app.switch_view(View::Exec);
+        app.exec.tool = "calculator".into();
+        for c in "1q? 2+2".chars() {
+            let quit = app.on_key(KeyEvent::new(KeyCode::Char(c), KeyModifiers::empty()));
+            assert!(!quit, "key {c:?} must not quit");
+        }
+        assert_eq!(app.exec.args_line, "1q? 2+2");
+        assert_eq!(app.view, View::Exec);
+        assert!(!app.should_quit);
+    }
+
+    #[test]
+    fn exec_esc_backs_and_ctrl_k_opens_palette() {
+        let mut app = App::new(&test_repo());
+        app.switch_view(View::Exec);
+        app.on_key(KeyEvent::new(KeyCode::Esc, KeyModifiers::empty()));
+        assert_eq!(app.view, View::Main);
+        app.switch_view(View::Exec);
+        app.on_key(KeyEvent::new(KeyCode::Char('k'), KeyModifiers::CONTROL));
+        assert!(app.palette_open);
+    }
+
+    #[test]
+    fn no_view_leaks_navigation_while_typing() {
+        // Traversal: di semua view, alfabet+digit+simbol tak boleh
+        // memindah view kecuali key khususnya masing-masing mode.
+        use KeyCode as K;
+        let mut app = App::new(&test_repo());
+        for view in [View::Main, View::Modules, View::Logs, View::Help] {
+            app.switch_view(view.clone());
+            for c in ['a', 'z', '0', '9', '.', '-', '/'] {
+                app.on_key(KeyEvent::new(K::Char(c), KeyModifiers::empty()));
+                // '/' hanya bermakna di Tools; di view lain harus diam.
+                assert_eq!(app.view, view, "key {c:?} moved {view:?}");
+            }
+            assert!(!app.should_quit);
+        }
+        // 'q' boleh quit HANYA di luar mode input — verifikasi Main.
+        app.switch_view(View::Main);
+        assert!(app.on_key(KeyEvent::new(K::Char('q'), KeyModifiers::empty())));
     }
 
     #[test]

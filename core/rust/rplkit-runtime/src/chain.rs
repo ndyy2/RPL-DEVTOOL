@@ -15,6 +15,8 @@ use crate::{exec_native, exec_py};
 pub struct Outcome {
     pub code: i32,
     pub executed_by: &'static str,
+    /// Jejak langkah (sama seperti Captured::attempts).
+    pub attempts: Vec<Attempt>,
 }
 
 /// Hasil capture untuk TUI (output selalu string, timing per langkah akhir).
@@ -23,136 +25,174 @@ pub struct Captured {
     pub executed_by: &'static str,
     pub output: String,
     pub ms: u128,
+    /// Jejak langkah yang dicoba, berurutan (Fase 0 instrumentasi).
+    /// `ms` = biaya langkah itu; `ok` = langkah menghasilkan hasil
+    /// (bukan sekadar dilewati karena tak tersedia).
+    pub attempts: Vec<Attempt>,
+}
+
+/// Satu langkah rantai yang dicoba.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Attempt {
+    pub step: &'static str,
+    pub ms: u128,
+    pub ok: bool,
 }
 
 /// Varian capture: output tool dikembalikan (untuk Exec view + copy),
 /// bukan passthrough. Timing diukur per langkah yang berhasil/gagal.
-pub fn run_tool_captured(repo_root: &Path, tool: &ToolDef, args: &[String]) -> Captured {
+///
+/// Menerima rantai TERKOMPILASI (tanpa match string). Untuk kompatibilitas,
+/// lihat [`run_tool_captured`] yang mengkompilasi dari `&ToolDef`.
+pub fn execute_compiled(chain: &[crate::registry::Executor], args: &[String]) -> Captured {
+    use crate::registry::Executor;
     use std::time::Instant;
-    let finish = |code: i32, by: &'static str, output: String, t0: Instant| Captured {
-        code,
-        executed_by: by,
-        output,
-        ms: t0.elapsed().as_millis(),
-    };
+    let mut attempts: Vec<Attempt> = Vec::new();
+    macro_rules! done {
+        ($code:expr, $by:expr, $output:expr, $t0:expr, $step:expr) => {{
+            attempts.push(Attempt { step: $step, ms: $t0.elapsed().as_millis(), ok: $code == 0 });
+            let ms = $t0.elapsed().as_millis();
+            return Captured {
+                code: $code,
+                executed_by: $by,
+                output: $output,
+                ms,
+                attempts: std::mem::take(&mut attempts),
+            };
+        }};
+    }
+    macro_rules! skipped {
+        ($step:expr) => {
+            attempts.push(Attempt { step: $step, ms: 0, ok: false });
+        };
+    }
     let mut last_err = String::from("empty chain");
-    for step in default_chain(tool) {
+    for step in chain {
         match step {
-            "native" => {
+            Executor::Native(op) => {
                 let t0 = Instant::now();
-                let op = match tool.native_op.as_deref() {
-                    Some(o) => o,
-                    None => {
-                        last_err = "native step without op".into();
-                        continue;
-                    }
-                };
+                if op.is_empty() {
+                    last_err = "native step without op".into();
+                    skipped!("native");
+                    continue;
+                }
                 match exec_native::run_op(op, args) {
-                    Ok(out) => return finish(0, "native", out, t0),
-                    Err(e) => return finish(1, "native", format!("error: {e}"), t0),
+                    Ok(out) => done!(0, "native", out, t0, "native"),
+                    Err(e) => done!(1, "native", format!("error: {e}"), t0, "native"),
                 }
             }
-            "py-embed" => {
-                let rel = match tool.py_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "py-embed without entry".into();
-                        continue;
-                    }
-                };
-                let abs = repo_root.join(rel);
+            Executor::PyEmbed(abs) => {
                 let t0 = Instant::now();
-                let r = std::panic::catch_unwind(|| exec_py::run_embedded_captured(&abs, args));
+                if abs.as_os_str().is_empty() {
+                    last_err = "py-embed without entry".into();
+                    skipped!("py-embed");
+                    continue;
+                }
+                let r = std::panic::catch_unwind(|| exec_py::run_embedded_captured(abs, args));
                 match r {
-                    Ok(Ok((0, out))) => return finish(0, "py-embed", out, t0),
-                    Ok(Ok((c, out))) => return finish(c, "py-embed", out, t0),
+                    Ok(Ok((0, out))) => done!(0, "py-embed", out, t0, "py-embed"),
+                    Ok(Ok((c, out))) => done!(c, "py-embed", out, t0, "py-embed"),
                     Ok(Err(exec_py::EmbedError::ToolFailed(c))) => {
-                        return finish(c, "py-embed", String::new(), t0)
+                        done!(c, "py-embed", String::new(), t0, "py-embed")
                     }
                     Ok(Err(e)) => {
                         last_err = e.to_string();
+                        skipped!("py-embed");
                         continue;
                     }
                     Err(_) => {
                         last_err = "python interpreter panicked".into();
+                        skipped!("py-embed");
                         continue;
                     }
                 }
             }
-            "py-sys" => {
-                let rel = match tool.py_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "py-sys without entry".into();
-                        continue;
-                    }
-                };
+            Executor::PySys(abs) => {
                 let t0 = Instant::now();
-                match sys_capture("python3", &repo_root.join(rel), args) {
-                    Ok((c, out)) => return finish(c, "py-sys", out, t0),
+                if abs.as_os_str().is_empty() {
+                    last_err = "py-sys without entry".into();
+                    skipped!("py-sys");
+                    continue;
+                }
+                match sys_capture("python3", abs, args) {
+                    Ok((c, out)) => done!(c, "py-sys", out, t0, "py-sys"),
                     Err(e) => {
                         last_err = e;
+                        skipped!("py-sys");
                         continue;
                     }
                 }
             }
-            "js-embed" => {
-                let rel = match tool.ts_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "js-embed without entry".into();
-                        continue;
-                    }
-                };
-                let src = match std::fs::read_to_string(repo_root.join(rel)) {
+            Executor::JsEmbed(abs) => {
+                let t0 = Instant::now();
+                if abs.as_os_str().is_empty() {
+                    last_err = "js-embed without entry".into();
+                    skipped!("js-embed");
+                    continue;
+                }
+                let src = match std::fs::read_to_string(abs) {
                     Ok(s) => s,
                     Err(e) => {
-                        last_err = format!("cannot read {rel}: {e}");
+                        last_err = format!("cannot read {}: {e}", abs.display());
+                        skipped!("js-embed");
                         continue;
                     }
                 };
-                let t0 = Instant::now();
                 let js = match crate::ts_strip(&src) {
                     Ok(j) => j,
                     Err(e) => {
                         last_err = format!("ts strip failed ({e})");
+                        skipped!("js-embed");
                         continue;
                     }
                 };
-                let mut argv = vec!["node".to_string(), rel.to_string()];
+                let mut argv = vec!["node".to_string(), abs.to_string_lossy().into_owned()];
                 argv.extend_from_slice(args);
                 match crate::js_eval(&js, &argv) {
-                    Ok((out, code)) => return finish(code, "js-embed", out, t0),
+                    Ok((out, code)) => done!(code, "js-embed", out, t0, "js-embed"),
                     Err(e) => {
                         last_err = format!("js eval failed ({e})");
+                        skipped!("js-embed");
                         continue;
                     }
                 }
             }
-            "node-sys" => {
-                let rel = match tool.ts_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "node-sys without entry".into();
-                        continue;
-                    }
-                };
+            Executor::NodeSys(abs) => {
                 let t0 = Instant::now();
-                match sys_capture("node", &repo_root.join(rel), args) {
-                    Ok((c, out)) => return finish(c, "node-sys", out, t0),
+                if abs.as_os_str().is_empty() {
+                    last_err = "node-sys without entry".into();
+                    skipped!("node-sys");
+                    continue;
+                }
+                match sys_capture("node", abs, args) {
+                    Ok((c, out)) => done!(c, "node-sys", out, t0, "node-sys"),
                     Err(e) => {
                         last_err = e;
+                        skipped!("node-sys");
                         continue;
                     }
                 }
             }
-            _ => {
-                last_err = format!("unknown chain step: {step}");
+            Executor::Unknown(other) => {
+                last_err = format!("unknown chain step: {other}");
+                skipped!("unknown");
                 continue;
             }
         }
     }
-    Captured { code: 1, executed_by: "none", output: format!("error: {last_err}"), ms: 0 }
+    Captured {
+        code: 1,
+        executed_by: "none",
+        output: format!("error: {last_err}"),
+        ms: 0,
+        attempts,
+    }
+}
+
+/// Kompatibilitas: kompilasi satu-kali dari `&ToolDef` lalu eksekusi.
+/// Jalur panas (TUI/CLI berulang) sebaiknya memakai [`crate::registry::ToolHandle`].
+pub fn run_tool_captured(repo_root: &Path, tool: &ToolDef, args: &[String]) -> Captured {
+    execute_compiled(&crate::registry::compile_chain(tool, repo_root), args)
 }
 
 fn sys_capture(program: &str, entry: &Path, args: &[String]) -> Result<(i32, String), String> {
@@ -172,26 +212,6 @@ fn sys_capture(program: &str, entry: &Path, args: &[String]) -> Result<(i32, Str
     Ok((out.status.code().unwrap_or(1), text))
 }
 
-fn default_chain(tool: &ToolDef) -> Vec<&'static str> {
-    if !tool.exec.is_empty() {
-        return tool.exec.iter().map(|s| match s.as_str() {
-            "native" => "native",
-            "py-embed" => "py-embed",
-            "py-sys" => "py-sys",
-            "js-embed" => "js-embed",
-            "node-sys" => "node-sys",
-            _ => "unknown",
-        }).collect();
-    }
-    if tool.py_entry.is_some() {
-        vec!["py-embed", "py-sys"]
-    } else if tool.ts_entry.is_some() {
-        vec!["js-embed", "node-sys"]
-    } else {
-        vec!["native"]
-    }
-}
-
 fn sys_command(program: &str, entry: &Path, args: &[String]) -> Result<i32, String> {
     let status = Command::new(program)
         .arg(entry)
@@ -202,89 +222,113 @@ fn sys_command(program: &str, entry: &Path, args: &[String]) -> Result<i32, Stri
 }
 
 /// Jalankan tool mengikuti rantainya. Tak pernah panic (catch_unwind di
-/// tiap langkah embed).
+/// tiap langkah embed). Varian passthrough: output mengalir ke stdout
+/// (untuk REPL interaktif); perilaku cetak IDENTIK dengan versi lama.
 pub fn run_tool(repo_root: &Path, tool: &ToolDef, args: &[String]) -> Outcome {
+    execute_passthrough(&crate::registry::compile_chain(tool, repo_root), args)
+}
+
+/// Inti passthrough atas rantai TERKOMPILASI (dipakai [`run_tool`] dan
+/// [`crate::registry::ToolHandle::execute_passthrough`]).
+pub fn execute_passthrough(chain: &[crate::registry::Executor], args: &[String]) -> Outcome {
+    use crate::registry::Executor;
+    use std::time::Instant;
+    let mut attempts: Vec<Attempt> = Vec::new();
+    macro_rules! done {
+        ($code:expr, $by:expr, $t0:expr, $step:expr) => {{
+            attempts.push(Attempt { step: $step, ms: $t0.elapsed().as_millis(), ok: $code == 0 });
+            return Outcome {
+                code: $code,
+                executed_by: $by,
+                attempts: std::mem::take(&mut attempts),
+            };
+        }};
+    }
+    macro_rules! skipped {
+        ($step:expr) => {
+            attempts.push(Attempt { step: $step, ms: 0, ok: false });
+        };
+    }
     let mut last_err = String::from("empty chain");
-    for step in default_chain(tool) {
+    for step in chain {
         match step {
-            "native" => {
-                let op = match tool.native_op.as_deref() {
-                    Some(o) => o,
-                    None => {
-                        last_err = "native step without op".into();
-                        continue;
-                    }
-                };
-                match exec_native::run_op(op, args) {
+            Executor::Native(op) => {
+                let t0 = Instant::now();
+                if op.is_empty() {
+                    last_err = "native step without op".into();
+                    skipped!("native");
+                    continue;
+                }
+                match exec_native::run_op(&op, args) {
                     Ok(out) => {
                         println!("{out}");
-                        return Outcome { code: 0, executed_by: "native" };
+                        done!(0, "native", t0, "native");
                     }
                     Err(e) => {
                         eprintln!("error: {e}");
-                        return Outcome { code: 1, executed_by: "native" };
+                        done!(1, "native", t0, "native");
                     }
                 }
             }
-            "py-embed" => {
-                let rel = match tool.py_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "py-embed without entry".into();
-                        continue;
-                    }
-                };
-                let abs = repo_root.join(rel);
+            Executor::PyEmbed(abs) => {
+                let t0 = Instant::now();
+                if abs.as_os_str().is_empty() {
+                    last_err = "py-embed without entry".into();
+                    skipped!("py-embed");
+                    continue;
+                }
                 // argv untuk main(): argumen tool saja, TANPA nama prog
                 // (impl.py memakai sys.argv[1:] bila argv None — konsisten).
                 let argv: Vec<String> = args.to_vec();
                 let r = std::panic::catch_unwind(|| exec_py::run_embedded(&abs, &argv));
                 match r {
-                    Ok(Ok(0)) => return Outcome { code: 0, executed_by: "py-embed" },
-                    Ok(Ok(c)) => return Outcome { code: c, executed_by: "py-embed" },
+                    Ok(Ok(0)) => done!(0, "py-embed", t0, "py-embed"),
+                    Ok(Ok(c)) => done!(c, "py-embed", t0, "py-embed"),
                     Ok(Err(exec_py::EmbedError::ToolFailed(c))) => {
-                        return Outcome { code: c, executed_by: "py-embed" }
+                        done!(c, "py-embed", t0, "py-embed")
                     }
                     Ok(Err(e)) => {
                         last_err = e.to_string();
                         eprintln!("py-embed unavailable ({last_err}), trying fallback…");
+                        skipped!("py-embed");
                         continue;
                     }
                     Err(_) => {
                         last_err = "python interpreter panicked".into();
                         eprintln!("py-embed panicked, trying fallback…");
+                        skipped!("py-embed");
                         continue;
                     }
                 }
             }
-            "py-sys" => {
-                let rel = match tool.py_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "py-sys without entry".into();
-                        continue;
-                    }
-                };
-                match sys_command("python3", &repo_root.join(rel), args) {
-                    Ok(c) => return Outcome { code: c, executed_by: "py-sys" },
+            Executor::PySys(abs) => {
+                let t0 = Instant::now();
+                if abs.as_os_str().is_empty() {
+                    last_err = "py-sys without entry".into();
+                    skipped!("py-sys");
+                    continue;
+                }
+                match sys_command("python3", &abs, args) {
+                    Ok(c) => done!(c, "py-sys", t0, "py-sys"),
                     Err(e) => {
                         last_err = e;
+                        skipped!("py-sys");
                         continue;
                     }
                 }
             }
-            "js-embed" => {
-                let rel = match tool.ts_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "js-embed without entry".into();
-                        continue;
-                    }
-                };
-                let src = match std::fs::read_to_string(repo_root.join(rel)) {
+            Executor::JsEmbed(abs) => {
+                let t0 = Instant::now();
+                if abs.as_os_str().is_empty() {
+                    last_err = "js-embed without entry".into();
+                    skipped!("js-embed");
+                    continue;
+                }
+                let src = match std::fs::read_to_string(&abs) {
                     Ok(s) => s,
                     Err(e) => {
-                        last_err = format!("cannot read {rel}: {e}");
+                        last_err = format!("cannot read {}: {e}", abs.display());
+                        skipped!("js-embed");
                         continue;
                     }
                 };
@@ -293,47 +337,50 @@ pub fn run_tool(repo_root: &Path, tool: &ToolDef, args: &[String]) -> Outcome {
                     Err(e) => {
                         last_err = format!("ts strip failed ({e}), trying node…");
                         eprintln!("{last_err}");
+                        skipped!("js-embed");
                         continue;
                     }
                 };
-                let mut argv = vec!["node".to_string(), rel.to_string()];
+                let mut argv = vec!["node".to_string(), abs.to_string_lossy().into_owned()];
                 argv.extend_from_slice(args);
                 match crate::js_eval(&js, &argv) {
                     Ok((out, code)) => {
                         print!("{out}");
-                        return Outcome { code, executed_by: "js-embed" };
+                        done!(code, "js-embed", t0, "js-embed");
                     }
                     Err(e) => {
                         last_err = format!("js eval failed ({e}), trying node…");
                         eprintln!("{last_err}");
+                        skipped!("js-embed");
                         continue;
                     }
                 }
             }
-            "node-sys" => {
-                let rel = match tool.ts_entry.as_deref() {
-                    Some(r) => r,
-                    None => {
-                        last_err = "node-sys without entry".into();
-                        continue;
-                    }
-                };
-                match sys_command("node", &repo_root.join(rel), args) {
-                    Ok(c) => return Outcome { code: c, executed_by: "node-sys" },
+            Executor::NodeSys(abs) => {
+                let t0 = Instant::now();
+                if abs.as_os_str().is_empty() {
+                    last_err = "node-sys without entry".into();
+                    skipped!("node-sys");
+                    continue;
+                }
+                match sys_command("node", &abs, args) {
+                    Ok(c) => done!(c, "node-sys", t0, "node-sys"),
                     Err(e) => {
                         last_err = e;
+                        skipped!("node-sys");
                         continue;
                     }
                 }
             }
-            _ => {
-                last_err = format!("unknown chain step: {step}");
+            Executor::Unknown(other) => {
+                last_err = format!("unknown chain step: {other}");
+                skipped!("unknown");
                 continue;
             }
         }
     }
     eprintln!("error: tool could not run ({last_err})");
-    Outcome { code: 1, executed_by: "none" }
+    Outcome { code: 1, executed_by: "none", attempts }
 }
 
 #[cfg(test)]
@@ -358,6 +405,9 @@ mod tests {
         let calc = registry::find(&tools, "calculator").expect("calc");
         let o = run_tool(&repo_root(), calc, &s(&["6 * 7"]));
         assert_eq!((o.code, o.executed_by), (0, "native"));
+        assert_eq!(o.attempts.len(), 1);
+        assert_eq!(o.attempts[0].step, "native");
+        assert!(o.attempts[0].ok);
     }
 
     #[test]
@@ -435,5 +485,28 @@ mod tests {
         assert_eq!((c.code, c.executed_by), (0, "py-sys"));
         assert!(c.output.contains("CAP-OK"), "{}", c.output);
         let _ = std::fs::remove_dir_all(&repo);
+    }
+
+    #[test]
+    fn attempts_record_skipped_steps() {
+        use crate::registry::ToolDef;
+        // Tanpa entry: kedua langkah dilewati, jejak lengkap.
+        let def = ToolDef {
+            name: "hantu".into(),
+            version: "1".into(),
+            description: "t".into(),
+            module: "m".into(),
+            group: None,
+            exec: vec!["py-embed".into(), "py-sys".into()],
+            native_op: None,
+            py_entry: None,
+            ts_entry: None,
+            dir: std::path::PathBuf::new(),
+        };
+        let c = run_tool_captured(std::path::Path::new("/x"), &def, &[]);
+        assert_eq!(c.code, 1);
+        let steps: Vec<&str> = c.attempts.iter().map(|a| a.step).collect();
+        assert_eq!(steps, vec!["py-embed", "py-sys"]);
+        assert!(c.attempts.iter().all(|a| !a.ok));
     }
 }

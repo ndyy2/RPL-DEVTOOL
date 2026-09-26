@@ -12,6 +12,7 @@ pub fn runtime_version() -> &'static str {
 }
 
 pub mod registry;
+pub mod index;
 pub mod modules;
 pub mod history;
 pub mod exec_native;
@@ -92,13 +93,35 @@ pub fn ts_strip(src: &str) -> Result<String, String> {
 
 use rquickjs::{Array, Context, Function, Object, Runtime};
 
+use std::cell::RefCell;
+
+thread_local! {
+    /// Satu QuickJS Runtime per thread, dipakai ulang antar eksekusi.
+    /// Konteks tetap dibuat segar per eval (isolasi antar tool/run).
+    static QJS_RT: RefCell<Option<Runtime>> = const { RefCell::new(None) };
+}
+
 /// Eksekusi JS di QuickJS dengan shim `process.argv`/`process.exit` dan
 /// `console.log` yang ditangkap. Return (captured_stdout, exit_code).
 /// `process.exit(n)` mencatat kode; tool mengikuti template hello.ts
 /// (exit dipanggil di akhir), didokumentasikan di kontrak tool.
 pub fn js_eval(src: &str, argv: &[String]) -> Result<(String, i32), String> {
-    let rt = Runtime::new().map_err(|e| format!("js runtime: {e:?}"))?;
-    let ctx = Context::full(&rt).map_err(|e| format!("js context: {e:?}"))?;
+    QJS_RT.try_with(|cell| {
+        {
+            let mut slot = cell.borrow_mut();
+            if slot.is_none() {
+                *slot = Some(Runtime::new().map_err(|e| format!("js runtime: {e:?}"))?);
+            }
+        }
+        let slot = cell.borrow();
+        let rt = slot.as_ref().expect("just initialized");
+        js_eval_with(rt, src, argv)
+    })
+    .map_err(|_| "quickjs thread-local unavailable".to_string())?
+}
+
+fn js_eval_with(rt: &Runtime, src: &str, argv: &[String]) -> Result<(String, i32), String> {
+    let ctx = Context::full(rt).map_err(|e| format!("js context: {e:?}"))?;
     ctx.with(|ctx| {
         let out = std::rc::Rc::new(std::cell::RefCell::new(String::new()));
         let out2 = out.clone();
